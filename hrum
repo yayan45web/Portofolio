@@ -1,0 +1,843 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>HRUM - Cerita Saham Metode Kang Yayan</title>
+<style>
+  :root {
+    --bg:     #05080f;
+    --card:   #080e1a;
+    --border: #0d1f38;
+    --accent: #0ea5e9;
+    --gold:   #f59e0b;
+    --green:  #10b981;
+    --red:    #ef4444;
+    --purple: #8b5cf6;
+    --text:   #cbd5e1;
+    --muted:  #475569;
+    --dim:    #1e293b;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: system-ui, -apple-system, sans-serif;
+    min-height: 100vh;
+  }
+
+  /* HEADER */
+  .header {
+    background: linear-gradient(135deg, #020917 0%, #0a1628 60%, #060d1c 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 18px 20px 14px;
+    position: sticky; top: 0; z-index: 100;
+  }
+  .header-label {
+    font-size: 9px; letter-spacing: 4px; color: var(--muted);
+    font-family: monospace; margin-bottom: 6px;
+  }
+  .header-row {
+    display: flex; justify-content: space-between;
+    align-items: flex-end; flex-wrap: wrap; gap: 10px;
+  }
+  .ticker-name {
+    font-size: 36px; font-weight: 900; color: var(--accent);
+    letter-spacing: 1px; font-family: Georgia, serif;
+  }
+  .ticker-price { font-size: 26px; font-weight: 700; color: var(--red); }
+  .ticker-chg   { font-size: 12px; font-weight: 700; color: var(--red); }
+  .ticker-sub   { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .pills { display: flex; gap: 6px; flex-wrap: wrap; }
+  .pill {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 8px; padding: 5px 10px; text-align: center;
+  }
+  .pill-l { font-size: 8px; color: var(--muted); letter-spacing: 1px; }
+  .pill-v { font-size: 11px; font-weight: 800; color: var(--accent); }
+
+  /* PAGE DOTS */
+  .dot-nav {
+    display: flex; justify-content: center; gap: 6px;
+    padding: 12px 0 0;
+  }
+  .dot {
+    height: 8px; border-radius: 4px; border: none;
+    cursor: pointer; transition: all 0.3s; background: var(--dim);
+    width: 8px;
+  }
+  .dot.active { width: 24px; background: var(--accent); }
+  .page-label {
+    text-align: center; font-size: 9px; color: var(--muted); margin-top: 4px;
+  }
+
+  /* CONTENT */
+  .content {
+    padding: 16px 16px 80px;
+    max-width: 480px; margin: 0 auto;
+  }
+  .page { display: none; }
+  .page.active { display: block; }
+
+  /* CARDS */
+  .card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 10px; padding: 14px 16px; margin-bottom: 12px;
+  }
+  .card-gradient {
+    background: linear-gradient(135deg, var(--card), #0a1628);
+    border: 1px solid var(--border); border-radius: 12px;
+    padding: 16px; margin-bottom: 14px;
+  }
+  .card-accent-left {
+    background: var(--card); border-radius: 8px;
+    padding: 10px 12px; margin-bottom: 8px;
+  }
+
+  /* DIVIDER */
+  .divider {
+    display: flex; align-items: center; gap: 10px;
+    margin: 20px 0 14px;
+  }
+  .divider-line { flex: 1; height: 1px; background: var(--border); }
+  .divider-text {
+    font-size: 9px; color: var(--muted);
+    letter-spacing: 3px; font-family: monospace; white-space: nowrap;
+  }
+
+  /* QUOTE */
+  .quote {
+    background: linear-gradient(135deg, #0a1628, #0d1e35);
+    border: 1px solid rgba(14,165,233,.2);
+    border-left: 3px solid var(--accent);
+    border-radius: 10px; padding: 14px 16px; margin: 12px 0;
+  }
+  .quote-text {
+    font-size: 13px; color: #93c5fd; font-style: italic;
+    line-height: 1.7; font-family: Georgia, serif;
+  }
+  .quote-author { font-size: 10px; color: var(--muted); margin-top: 6px; }
+
+  /* STATS GRID */
+  .stats-grid {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 8px; margin-bottom: 14px;
+  }
+  .stat-card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 8px; padding: 10px 12px; text-align: center;
+    border-top: 2px solid var(--accent);
+  }
+  .stat-label { font-size: 9px; color: var(--muted); margin-bottom: 4px; letter-spacing: 1px; }
+  .stat-value { font-size: 15px; font-weight: 900; }
+  .stat-sub   { font-size: 9px; color: var(--muted); margin-top: 3px; }
+
+  /* LOHAN GRID */
+  .lohan-grid {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 8px; margin-bottom: 14px;
+  }
+  .lohan-card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 10px; padding: 10px 12px;
+    border-top: 2px solid;
+  }
+  .lohan-title { font-size: 10px; font-weight: 900; line-height: 1.4; margin-bottom: 5px; }
+  .lohan-desc  { font-size: 9px; color: var(--muted); line-height: 1.6; }
+
+  /* WYCKOFF */
+  .wyckoff-badges {
+    display: flex; gap: 8px; align-items: center;
+    justify-content: center; margin-bottom: 10px; flex-wrap: wrap;
+  }
+  .wyckoff-item { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  .phase-badge {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 24px; height: 24px; border-radius: 50%;
+    font-size: 9px; font-weight: 900;
+    background: transparent; border: 2px solid var(--dim); color: var(--dim);
+  }
+  .phase-badge.active {
+    width: 32px; height: 32px; font-size: 11px; color: #000;
+  }
+  .phase-label { font-size: 7px; color: var(--muted); text-align: center; max-width: 40px; }
+  .wyckoff-note {
+    background: #0a1628; border-radius: 8px;
+    padding: 8px 12px; border-left: 3px solid var(--gold);
+  }
+  .wyckoff-note-title { font-size: 10px; color: var(--gold); font-weight: 700; }
+  .wyckoff-note-desc  { font-size: 10px; color: var(--muted); margin-top: 3px; line-height: 1.6; }
+
+  /* TIMELINE */
+  .timeline-item { display: flex; gap: 12px; margin-bottom: 0; }
+  .tl-line {
+    display: flex; flex-direction: column;
+    align-items: center; min-width: 20px;
+  }
+  .tl-dot {
+    width: 16px; height: 16px; border-radius: 50%;
+    background: var(--dim); border: 2px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 8px; color: var(--muted); font-weight: 900; flex-shrink: 0;
+  }
+  .tl-dot.current { color: #000; }
+  .tl-connector { width: 1px; flex: 1; background: var(--border); min-height: 20px; }
+  .tl-body { padding-bottom: 18px; flex: 1; }
+  .tl-head { display: flex; gap: 8px; align-items: center; margin-bottom: 4px; }
+  .tl-emoji { font-size: 14px; }
+  .tl-period { font-size: 9px; color: var(--muted); letter-spacing: 1px; }
+  .tl-title  { font-size: 12px; font-weight: 800; }
+  .tl-sub    { font-size: 10px; color: var(--gold); font-weight: 700; }
+  .tl-desc   { font-size: 10px; color: var(--text); line-height: 1.8; margin-left: 22px; }
+
+  /* SMELTER */
+  .smelter-card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 8px; padding: 10px 14px; margin-bottom: 8px;
+    display: flex; justify-content: space-between; align-items: center;
+    border-left: 4px solid;
+  }
+  .smelter-code  { font-size: 12px; font-weight: 800; }
+  .smelter-name  { font-size: 10px; color: var(--text); }
+  .smelter-own   { font-size: 9px; color: var(--muted); }
+  .smelter-asset { font-size: 10px; font-weight: 700; }
+  .smelter-loc   { font-size: 8px; color: var(--muted); }
+
+  /* REV BARS */
+  .rev-row { margin-bottom: 10px; }
+  .rev-head { display: flex; justify-content: space-between; margin-bottom: 4px; }
+  .rev-seg  { font-size: 10px; color: var(--text); }
+  .rev-chg  { font-size: 10px; font-weight: 700; }
+  .rev-bar-row { display: flex; gap: 6px; align-items: center; }
+  .rev-old  { font-size: 9px; color: var(--muted); min-width: 65px; text-align: right; }
+  .rev-new  { font-size: 9px; font-weight: 700; min-width: 65px; }
+  .rev-bar-wrap { flex: 1; background: var(--dim); border-radius: 3px; height: 8px; }
+  .rev-bar-fill { height: 100%; border-radius: 3px; }
+
+  /* BANDARMOLOGY */
+  .bando-card {
+    background: linear-gradient(135deg, #0a1022, #0d1628);
+    border-radius: 12px; padding: 14px; margin-bottom: 12px;
+  }
+  .bando-step { display: flex; gap: 10px; margin-bottom: 10px; }
+  .bando-num {
+    width: 20px; height: 20px; border-radius: 50%;
+    background: var(--gold); display: flex; align-items: center;
+    justify-content: center; color: #000; font-size: 10px;
+    font-weight: 900; flex-shrink: 0;
+  }
+  .bando-q { font-size: 10px; color: var(--gold); font-weight: 700; }
+  .bando-a { font-size: 10px; color: var(--text); margin-top: 2px; line-height: 1.5; }
+
+  /* BROKER FLOW */
+  .broker-row {
+    display: flex; align-items: center; gap: 8px; margin-bottom: 7px;
+  }
+  .broker-name { font-weight: 800; min-width: 24px; font-size: 11px; }
+  .broker-side {
+    font-size: 9px; padding: 1px 6px; border-radius: 3px;
+    font-weight: 700; min-width: 32px; text-align: center;
+  }
+  .broker-bar-wrap {
+    flex: 1; background: var(--dim); border-radius: 3px;
+    height: 10px; position: relative; overflow: hidden;
+  }
+  .broker-bar-fill { position: absolute; height: 100%; border-radius: 3px; }
+  .broker-center { position: absolute; left: 50%; top: 0; width: 1px; height: 100%; background: var(--border); }
+  .broker-net  { font-size: 10px; font-weight: 700; min-width: 38px; text-align: right; }
+  .broker-note { font-size: 8px; color: var(--muted); flex: 1; }
+
+  /* BUYBACK */
+  .buyback-card {
+    background: linear-gradient(135deg, #071020, #0a1628);
+    border-radius: 12px; padding: 14px; margin-bottom: 12px;
+  }
+  .insight-row {
+    background: var(--card); border-left: 3px solid;
+    border-radius: 6px; padding: 8px 12px; margin-bottom: 6px;
+  }
+  .insight-tag { font-size: 10px; font-weight: 700; }
+  .insight-txt { font-size: 10px; color: var(--muted); }
+
+  /* SCORECARD */
+  .score-total {
+    background: var(--card); border: 2px solid #f97316;
+    border-radius: 12px; padding: 14px; text-align: center; margin-bottom: 14px;
+  }
+  .score-lbl  { font-size: 9px; color: var(--muted); letter-spacing: 2px; margin-bottom: 4px; }
+  .score-num  { font-size: 40px; font-weight: 900; color: #f97316; }
+  .score-sub  { font-size: 20px; color: var(--muted); }
+  .score-pct  { font-size: 11px; color: #f97316; font-weight: 700; margin-bottom: 6px; }
+  .score-bar-wrap { background: var(--dim); border-radius: 6px; height: 8px; }
+  .score-bar-fill { height: 100%; border-radius: 6px; background: #f97316; }
+  .score-note { font-size: 9px; color: var(--muted); margin-top: 6px; }
+
+  .scorebar { margin-bottom: 12px; }
+  .scorebar-head { display: flex; justify-content: space-between; margin-bottom: 5px; }
+  .scorebar-lbl  { font-size: 11px; font-weight: 700; color: var(--text); }
+  .scorebar-val  { font-size: 11px; font-weight: 900; }
+  .scorebar-wrap { background: var(--dim); border-radius: 4px; height: 6px; margin-bottom: 5px; }
+  .scorebar-fill { height: 100%; border-radius: 4px; }
+  .scorebar-desc { font-size: 9px; color: var(--muted); line-height: 1.5; }
+
+  /* RISK */
+  .risk-item {
+    background: var(--card); border-radius: 8px;
+    border-left: 3px solid; padding: 10px 12px; margin-bottom: 8px;
+  }
+  .risk-title { font-size: 11px; font-weight: 700; margin-bottom: 3px; }
+  .risk-desc  { font-size: 10px; color: var(--muted); line-height: 1.6; }
+
+  /* TRADE PLAN */
+  .trade-row {
+    display: flex; gap: 10px; align-items: flex-start;
+    padding: 9px 12px; background: var(--card);
+    border-left: 3px solid; border-radius: 6px; margin-bottom: 6px;
+  }
+  .trade-label { min-width: 115px; font-size: 10px; color: var(--muted); }
+  .trade-value { font-size: 13px; font-weight: 900; }
+  .trade-note  { font-size: 9px; color: var(--dim); margin-top: 2px; }
+
+  /* ENDING */
+  .ending-card {
+    background: linear-gradient(135deg, #050d1a, #0a1628);
+    border: 1px solid rgba(14,165,233,.2);
+    border-radius: 12px; padding: 16px;
+  }
+  .ending-title {
+    font-size: 12px; font-weight: 800; color: #e2e8f0;
+    line-height: 1.7; margin-bottom: 10px; font-family: Georgia, serif;
+  }
+  .ending-body {
+    font-size: 10px; color: var(--text); line-height: 1.9; margin-bottom: 10px;
+  }
+  .ending-decision {
+    background: #050e1a; border-radius: 8px;
+    padding: 10px 12px; border-left: 3px solid var(--gold); margin-top: 8px;
+  }
+  .ending-dec-title { font-size: 10px; color: var(--gold); font-weight: 700; margin-bottom: 4px; }
+  .ending-dec-body  { font-size: 11px; color: var(--text); line-height: 1.7; }
+
+  /* FOOTER */
+  .footer-txt {
+    text-align: center; font-size: 9px; color: var(--dim);
+    padding: 16px 0 0; line-height: 2;
+  }
+
+  /* NAV */
+  .nav-bar {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-top: 24px; padding-top: 16px;
+    border-top: 1px solid var(--border);
+  }
+  .nav-btn {
+    padding: 10px 20px; border-radius: 8px;
+    font-size: 12px; font-weight: 700; cursor: pointer;
+    transition: opacity 0.2s;
+  }
+  .nav-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+  .nav-prev { border: 1px solid var(--border); background: var(--card); color: var(--muted); }
+  .nav-next { border: 1px solid var(--accent); background: var(--card); color: var(--accent); }
+  .nav-lbl  { font-size: 10px; color: var(--muted); text-align: center; max-width: 140px; }
+
+  /* UTILS */
+  .flex-base { display: flex; align-items: baseline; gap: 12px; }
+  .section-title { font-size: 10px; letter-spacing: 2px; margin-bottom: 8px; font-weight: 700; }
+  .mt8  { margin-top: 8px; }
+  .mt12 { margin-top: 12px; }
+  .mb12 { margin-bottom: 12px; }
+  strong { font-weight: 700; }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-label">IDX : HRUM &nbsp; CERITA SAHAM &nbsp; METODE KANG YAYAN</div>
+  <div class="header-row">
+    <div>
+      <div class="flex-base">
+        <span class="ticker-name">HRUM</span>
+        <span class="ticker-price">Rp 995</span>
+        <span class="ticker-chg">-1.49%</span>
+      </div>
+      <div class="ticker-sub">PT Harum Energy Tbk &middot; Batu Bara + Nickel HPAL &middot; IDX</div>
+    </div>
+    <div class="pills">
+      <div class="pill"><div class="pill-l">MKT CAP</div><div class="pill-v">Rp 13.5T</div></div>
+      <div class="pill"><div class="pill-l">52W RANGE</div><div class="pill-v">760-1.305</div></div>
+      <div class="pill"><div class="pill-l">LABA 1Q26</div><div class="pill-v">+272% YoY</div></div>
+      <div class="pill"><div class="pill-l">FASE</div><div class="pill-v">Phase B/C</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- DOT NAV -->
+<div class="dot-nav">
+  <button class="dot active" onclick="goPage(1)" id="dot1"></button>
+  <button class="dot" onclick="goPage(2)" id="dot2"></button>
+  <button class="dot" onclick="goPage(3)" id="dot3"></button>
+  <button class="dot" onclick="goPage(4)" id="dot4"></button>
+</div>
+<div class="page-label" id="pageLabel">Halaman 1 / 4</div>
+
+<div class="content">
+
+  <!-- ===== PAGE 1: CERITA & TIMELINE ===== -->
+  <div class="page active" id="page1">
+
+    <div class="card-gradient">
+      <div class="section-title" style="color:var(--accent)">CERITA SAHAM INI</div>
+      <div style="font-size:15px;font-weight:900;color:#e2e8f0;line-height:1.5;margin-bottom:8px;font-family:Georgia,serif">
+        Dari Raja Batu Bara ke Tuan Nikel
+        <span style="color:var(--gold)"> &mdash; Transformasi yang Belum Selesai</span>
+      </div>
+      <div style="font-size:10px;color:var(--muted);line-height:1.8">
+        Tipe: <strong style="color:var(--gold)">Transformasi Bisnis</strong> &mdash;
+        Konglomerat batu bara yang bertaruh besar pada nikel.
+        Dari puncak Rp 2.400 ke lembah Rp 760, lalu kini berdiri di Rp 995.
+        Apakah ini dasar dari babak baru, atau sekadar istirahat sebelum turun lagi?
+      </div>
+    </div>
+
+    <div class="quote">
+      <div class="quote-text">&ldquo;HRUM bukan lagi perusahaan batu bara. Ia sedang menjadi raksasa nikel. Tapi proses transformasi selalu menyakitkan &mdash; dan inilah harganya.&rdquo;</div>
+      <div class="quote-author">&mdash; Analisa Metode Kang Yayan</div>
+    </div>
+
+    <div class="divider"><div class="divider-line"></div><div class="divider-text">TEORI IKAN LOHAN &mdash; HRUM EDITION</div><div class="divider-line"></div></div>
+
+    <div class="lohan-grid">
+      <div class="lohan-card" style="border-color:var(--green)">
+        <div class="lohan-title" style="color:var(--green)">FASE 1&#10;Akumulasi</div>
+        <div class="lohan-desc">2020-2022: HRUM bangun kerajaan nikel diam-diam. Investasi besar di HPAL Halmahera. Retail tidak tahu.</div>
+      </div>
+      <div class="lohan-card" style="border-color:var(--gold)">
+        <div class="lohan-title" style="color:var(--gold)">FASE 2&#10;PomPom</div>
+        <div class="lohan-desc">2022: Harga batu bara ATH, HRUM naik ke Rp 2.400. Semua orang tahu. Nikel jadi narasi tambahan.</div>
+      </div>
+      <div class="lohan-card" style="border-color:var(--red)">
+        <div class="lohan-title" style="color:var(--red)">FASE 3&#10;Menggoreng</div>
+        <div class="lohan-desc">2022-2023: Distribusi besar dari puncak. Harga turun tajam ke Rp 760. Retail tertinggal di atas.</div>
+      </div>
+      <div class="lohan-card" style="border-color:#f97316">
+        <div class="lohan-title" style="color:#f97316">FASE 4&#10;Cuci Piring</div>
+        <div class="lohan-desc">2023-2026: Panjang dan menyakitkan. Harga turun 2.400 ke 760. Foreign jual terus. Kita di sini.</div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom:14px">
+      <div class="section-title" style="color:var(--accent)">POSISI WYCKOFF SEKARANG</div>
+      <div class="wyckoff-badges">
+        <div class="wyckoff-item">
+          <div class="phase-badge" style="border-color:var(--red);color:var(--red)">A</div>
+          <div class="phase-label">Distribusi</div>
+        </div>
+        <div class="wyckoff-item">
+          <div class="phase-badge active" style="background:#f97316;box-shadow:0 0 12px #f9731666">B</div>
+          <div class="phase-label" style="color:var(--gold)">Akumulasi</div>
+        </div>
+        <div class="wyckoff-item">
+          <div class="phase-badge" style="border-color:var(--gold);color:var(--gold)">C</div>
+          <div class="phase-label">Spring</div>
+        </div>
+        <div class="wyckoff-item">
+          <div class="phase-badge" style="border-color:var(--green);color:var(--green)">D</div>
+          <div class="phase-label">Markup</div>
+        </div>
+        <div class="wyckoff-item">
+          <div class="phase-badge" style="border-color:var(--purple);color:var(--purple)">E</div>
+          <div class="phase-label">Breakout</div>
+        </div>
+      </div>
+      <div class="wyckoff-note">
+        <div class="wyckoff-note-title">Kita ada di Phase B menuju C</div>
+        <div class="wyckoff-note-desc">Distribusi dari Rp 2.400 sudah selesai. Harga sedang proses akumulasi diam-diam. Tunggu konfirmasi Spring di area 950-975 sebelum aman masuk.</div>
+      </div>
+    </div>
+
+    <div class="divider"><div class="divider-line"></div><div class="divider-text">PERJALANAN HRUM</div><div class="divider-line"></div></div>
+
+    <div class="timeline-item">
+      <div class="tl-line">
+        <div class="tl-dot" style="border-color:var(--red);background:var(--red);color:#000"></div>
+        <div class="tl-connector"></div>
+      </div>
+      <div class="tl-body">
+        <div class="tl-head"><span class="tl-emoji">&#128293;</span><div><div class="tl-period">2021-2022 | PHASE A</div><div class="tl-title" style="color:var(--red)">Era Kejayaan Batu Bara</div><div class="tl-sub">ATH Rp 2.400</div></div></div>
+        <div class="tl-desc">Harga batu bara global meroket akibat krisis energi. HRUM menangguk untung besar, revenue melebihi USD 400 juta per kuartal. Di balik layar, manajemen sudah membangun fondasi bisnis baru: nickel smelter di Halmahera.</div>
+      </div>
+    </div>
+    <div class="timeline-item">
+      <div class="tl-line">
+        <div class="tl-dot" style="border-color:#f97316;background:#f97316;color:#000"></div>
+        <div class="tl-connector"></div>
+      </div>
+      <div class="tl-body">
+        <div class="tl-head"><span class="tl-emoji">&#128201;</span><div><div class="tl-period">2022-2023 | PHASE A ke B</div><div class="tl-title" style="color:#f97316">Awal Distribusi Besar</div><div class="tl-sub">Rp 2.400 ke Rp 1.000</div></div></div>
+        <div class="tl-desc">Harga batu bara mulai normalisasi. Investor asing yang sudah profit besar mulai jual. Foreign flow minus lebih dari Rp 851 Miliar. HPAL mulai beroperasi tapi masih rugi di awal. Harga terus turun.</div>
+      </div>
+    </div>
+    <div class="timeline-item">
+      <div class="tl-line">
+        <div class="tl-dot" style="border-color:var(--purple);background:var(--purple);color:#000"></div>
+        <div class="tl-connector"></div>
+      </div>
+      <div class="tl-body">
+        <div class="tl-head"><span class="tl-emoji">&#9881;&#65039;</span><div><div class="tl-period">2023 | TRANSFORMASI</div><div class="tl-title" style="color:var(--purple)">HPAL Mulai Beroperasi</div><div class="tl-sub">Pivot dari Batu Bara ke Nikel</div></div></div>
+        <div class="tl-desc">BSE dan WMI mulai beroperasi di Weda Bay Industrial Park, Halmahera Tengah. Revenue nickel smelter mulai masuk. Tapi capex besar dan beban bunga membuat laba tertekan. Utang ke NCI subsidiaries tembus USD 763 juta.</div>
+      </div>
+    </div>
+    <div class="timeline-item">
+      <div class="tl-line">
+        <div class="tl-dot" style="border-color:var(--gold);background:var(--gold);color:#000"></div>
+        <div class="tl-connector"></div>
+      </div>
+      <div class="tl-body">
+        <div class="tl-head"><span class="tl-emoji">&#128260;</span><div><div class="tl-period">2024 | BUYBACK AKTIF</div><div class="tl-title" style="color:var(--gold)">Manajemen Beli Kembali</div><div class="tl-sub">369.5 Juta lembar dibeli</div></div></div>
+        <div class="tl-desc">Manajemen mulai program buyback besar-besaran. Total 369.5 juta lembar saham tresuri biaya USD 15.38 juta. Sinyal bullish: manajemen anggap harga MURAH. Broker XL mulai accumulate konsisten di semua timeframe.</div>
+      </div>
+    </div>
+    <div class="timeline-item">
+      <div class="tl-line">
+        <div class="tl-dot current" style="border-color:var(--accent);background:var(--accent);box-shadow:0 0 10px #0ea5e988"></div>
+        <div class="tl-connector"></div>
+      </div>
+      <div class="tl-body">
+        <div class="tl-head"><span class="tl-emoji">&#128640;</span><div><div class="tl-period">1Q26 | SEKARANG</div><div class="tl-title" style="color:var(--accent)">Laba Meledak +272% YoY</div><div class="tl-sub">Kita Ada Di Sini</div></div></div>
+        <div class="tl-desc">Revenue 1Q26: USD 345.9 juta (+15.7% YoY). Nickel smelter menyumbang 96% revenue! Laba bersih USD 27.1 juta vs USD 7.3 juta setahun lalu (+272% YoY). Tapi harga saham masih Rp 995 &mdash; jauh dari ATH 2.400.</div>
+      </div>
+    </div>
+    <div class="timeline-item">
+      <div class="tl-line">
+        <div class="tl-dot" style="border-color:var(--green);background:var(--green);color:#000"></div>
+        <div class="tl-connector"></div>
+      </div>
+      <div class="tl-body">
+        <div class="tl-head"><span class="tl-emoji">&#128302;</span><div><div class="tl-period">2026-2027 | PROYEKSI</div><div class="tl-title" style="color:var(--green)">Potensi Phase D</div><div class="tl-sub">Jika Semua Terkonfirmasi</div></div></div>
+        <div class="tl-desc">Jika nickel price global stabil, HPAL output meningkat, dan broker XL+RX terus akumulasi maka HRUM bisa mulai Phase D markup. Target jangka menengah Rp 1.100-1.300. Tapi butuh konfirmasi lebih dulu.</div>
+      </div>
+    </div>
+
+  </div><!-- end page1 -->
+
+  <!-- ===== PAGE 2: FUNDAMENTAL & HPAL ===== -->
+  <div class="page" id="page2">
+
+    <div class="divider"><div class="divider-line"></div><div class="divider-text">DATA FUNDAMENTAL 1Q26</div><div class="divider-line"></div></div>
+
+    <div class="stats-grid">
+      <div class="stat-card" style="border-top-color:var(--green)"><div class="stat-label">Total Revenue</div><div class="stat-value" style="color:var(--green)">$345.9 Juta</div><div class="stat-sub">+15.7% YoY</div></div>
+      <div class="stat-card" style="border-top-color:var(--accent)"><div class="stat-label">Gross Profit</div><div class="stat-value" style="color:var(--accent)">$64.6 Juta</div><div class="stat-sub">+8.4% YoY</div></div>
+      <div class="stat-card" style="border-top-color:var(--green)"><div class="stat-label">Net Profit</div><div class="stat-value" style="color:var(--green)">$27.1 Juta</div><div class="stat-sub">+272% YoY &#128640;</div></div>
+      <div class="stat-card" style="border-top-color:var(--red)"><div class="stat-label">Finance Cost</div><div class="stat-value" style="color:var(--red)">$20.4 Juta</div><div class="stat-sub">+82% YoY &#9888;&#65039;</div></div>
+      <div class="stat-card" style="border-top-color:var(--green)"><div class="stat-label">Kas & Setara</div><div class="stat-value" style="color:var(--green)">$154.8 Juta</div><div class="stat-sub">Solid &#128176;</div></div>
+      <div class="stat-card" style="border-top-color:#f97316"><div class="stat-label">Utang Bank</div><div class="stat-value" style="color:#f97316">$617 Juta</div><div class="stat-sub">LT + Current</div></div>
+      <div class="stat-card" style="border-top-color:var(--accent)"><div class="stat-label">Total Aset</div><div class="stat-value" style="color:var(--accent)">$3.69 Miliar</div><div class="stat-sub">Naik stabil</div></div>
+      <div class="stat-card" style="border-top-color:var(--green)"><div class="stat-label">Total Ekuitas</div><div class="stat-value" style="color:var(--green)">$1.85 Miliar</div><div class="stat-sub">Sehat</div></div>
+    </div>
+
+    <div class="quote">
+      <div class="quote-text">&ldquo;Laba naik +272% tapi harga saham malah turun. Ini bukan kontradiksi &mdash; ini KESEMPATAN yang harus dibaca dengan benar.&rdquo;</div>
+      <div class="quote-author">&mdash; Prinsip Metode Kang Yayan</div>
+    </div>
+
+    <div class="divider"><div class="divider-line"></div><div class="divider-text">MESIN UANG BARU: HPAL NIKEL</div><div class="divider-line"></div></div>
+
+    <div style="background:linear-gradient(135deg,#0a1022,#0c1a2e);border:1px solid rgba(139,92,246,.2);border-radius:12px;padding:14px;margin-bottom:12px">
+      <div class="section-title" style="color:var(--purple)">MENGAPA NIKEL = MASA DEPAN HRUM</div>
+      <div style="font-size:10px;color:var(--text);line-height:1.9">
+        HRUM kini bukan lagi perusahaan batu bara biasa. Dengan investasi masif di
+        <strong style="color:var(--accent)">3 nickel smelter</strong> di Weda Bay Halmahera,
+        segmen nikel sudah menyumbang <strong style="color:var(--gold)">96% dari total revenue 1Q26</strong>.
+        Batu bara yang dulu jadi raja, kini hanya menyumbang
+        <strong style="color:var(--red)">USD 6.2 juta</strong> dari total USD 345.9 juta.
+      </div>
+    </div>
+
+    <div class="smelter-card" style="border-left-color:var(--accent)">
+      <div><div class="smelter-code" style="color:var(--accent)">BSE</div><div class="smelter-name">Blue Sparking Energy</div><div class="smelter-own">25.89% kepemilikan HRUM via THN+NICAP</div></div>
+      <div style="text-align:right"><div class="smelter-asset" style="color:var(--accent)">Aset: USD 1.95 Miliar</div><div class="smelter-loc">Weda Bay, Halmahera</div></div>
+    </div>
+    <div class="smelter-card" style="border-left-color:var(--green)">
+      <div><div class="smelter-code" style="color:var(--green)">WMI</div><div class="smelter-name">Westrong Metal Industry</div><div class="smelter-own">40.97% kepemilikan HRUM</div></div>
+      <div style="text-align:right"><div class="smelter-asset" style="color:var(--green)">Aset: USD 747 Juta</div><div class="smelter-loc">Weda Bay, Halmahera</div></div>
+    </div>
+    <div class="smelter-card" style="border-left-color:var(--gold)">
+      <div><div class="smelter-code" style="color:var(--gold)">IMI</div><div class="smelter-name">Infei Metal Industry</div><div class="smelter-own">50.77% kepemilikan HRUM</div></div>
+      <div style="text-align:right"><div class="smelter-asset" style="color:var(--gold)">Aset: USD 198 Juta</div><div class="smelter-loc">Weda Bay, Halmahera</div></div>
+    </div>
+
+    <div class="card" style="margin-top:4px">
+      <div class="section-title" style="color:var(--accent)">PERUBAHAN REVENUE 1Q25 ke 1Q26</div>
+      <div class="rev-row">
+        <div class="rev-head"><span class="rev-seg">Nickel Smelter</span><span class="rev-chg" style="color:var(--green)">+92% &#128640;</span></div>
+        <div class="rev-bar-row">
+          <div class="rev-old">1Q25: $174M</div>
+          <div class="rev-bar-wrap"><div class="rev-bar-fill" style="width:100%;background:var(--green)"></div></div>
+          <div class="rev-new" style="color:var(--green)">1Q26: $334M</div>
+        </div>
+      </div>
+      <div class="rev-row">
+        <div class="rev-head"><span class="rev-seg">Pertambangan</span><span class="rev-chg" style="color:var(--red)">-95% &#9888;&#65039;</span></div>
+        <div class="rev-bar-row">
+          <div class="rev-old">1Q25: $123M</div>
+          <div class="rev-bar-wrap"><div class="rev-bar-fill" style="width:1.9%;background:var(--red)"></div></div>
+          <div class="rev-new" style="color:var(--red)">1Q26: $6M</div>
+        </div>
+      </div>
+      <div class="rev-row">
+        <div class="rev-head"><span class="rev-seg">Sewa &amp; Jasa</span><span class="rev-chg" style="color:var(--gold)">+162%</span></div>
+        <div class="rev-bar-row">
+          <div class="rev-old">1Q25: $2.1M</div>
+          <div class="rev-bar-wrap"><div class="rev-bar-fill" style="width:1.6%;background:var(--gold)"></div></div>
+          <div class="rev-new" style="color:var(--gold)">1Q26: $5.5M</div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- end page2 -->
+
+  <!-- ===== PAGE 3: BANDARMOLOGY & BUYBACK ===== -->
+  <div class="page" id="page3">
+
+    <div class="divider"><div class="divider-line"></div><div class="divider-text">BANDARMOLOGY &mdash; SIAPA BANDARNYA?</div><div class="divider-line"></div></div>
+
+    <div class="bando-card" style="border:1px solid rgba(245,158,11,.2)">
+      <div class="section-title" style="color:var(--gold)">6 LANGKAH BANDARMOLOGY KANG YAYAN</div>
+      <div class="bando-step"><div class="bando-num">1</div><div><div class="bando-q">Sejak kapan fase akumulasi?</div><div class="bando-a">2024 &mdash; setelah distribusi besar selesai dari puncak 2.400</div></div></div>
+      <div class="bando-step"><div class="bando-num">2</div><div><div class="bando-q">Broker siapa yang aktif akumulasi?</div><div class="bando-a">XL &mdash; paling konsisten di semua timeframe 1D/1W/1M/3M/YTD/1Y</div></div></div>
+      <div class="bando-step"><div class="bando-num">3</div><div><div class="bando-q">Estimasi avg bandar?</div><div class="bando-a">XL avg sekitar Rp 960-1.000 berdasarkan pola entry di broksum</div></div></div>
+      <div class="bando-step"><div class="bando-num">4</div><div><div class="bando-q">Entry mendekati avg bandar?</div><div class="bando-a">Harga kini Rp 995 &mdash; hampir tepat di avg bandar XL</div></div></div>
+      <div class="bando-step"><div class="bando-num">5</div><div><div class="bando-q">Saat koreksi XL masih beli?</div><div class="bando-a">Ya &mdash; XL konsisten beli bahkan saat harga turun di April 2026</div></div></div>
+      <div class="bando-step" style="margin-bottom:0"><div class="bando-num">6</div><div><div class="bando-q">Trade plan?</div><div class="bando-a">Entry partial di 975-1.000. Stop 900. Target 1.100-1.300</div></div></div>
+    </div>
+
+    <div class="card" style="margin-bottom:12px">
+      <div class="section-title" style="color:var(--accent)">BROKER FLOW &mdash; 30 APR 2026</div>
+      <div class="broker-row">
+        <span class="broker-name" style="color:var(--green)">XL</span>
+        <span class="broker-side" style="color:var(--green);background:rgba(16,185,129,.13)">BUY</span>
+        <div class="broker-bar-wrap"><div class="broker-bar-fill" style="left:50%;width:47%;background:rgba(16,185,129,.53)"></div><div class="broker-center"></div></div>
+        <span class="broker-net" style="color:var(--green)">+4.2B</span>
+        <span class="broker-note">Konsisten semua timeframe &#128293;</span>
+      </div>
+      <div class="broker-row">
+        <span class="broker-name" style="color:var(--green)">RX</span>
+        <span class="broker-side" style="color:var(--green);background:rgba(16,185,129,.13)">BUY</span>
+        <div class="broker-bar-wrap"><div class="broker-bar-fill" style="left:50%;width:42%;background:rgba(16,185,129,.53)"></div><div class="broker-center"></div></div>
+        <span class="broker-net" style="color:var(--green)">+3.8B</span>
+        <span class="broker-note">Beli besar hari ini avg 996</span>
+      </div>
+      <div class="broker-row">
+        <span class="broker-name" style="color:var(--green)">YP</span>
+        <span class="broker-side" style="color:var(--green);background:rgba(16,185,129,.13)">BUY</span>
+        <div class="broker-bar-wrap"><div class="broker-bar-fill" style="left:50%;width:18%;background:rgba(16,185,129,.53)"></div><div class="broker-center"></div></div>
+        <span class="broker-net" style="color:var(--green)">+1.6B</span>
+        <span class="broker-note">Konsisten beli avg 993</span>
+      </div>
+      <div class="broker-row">
+        <span class="broker-name" style="color:#4ade80">CC</span>
+        <span class="broker-side" style="color:#4ade80;background:rgba(74,222,128,.13)">BUY</span>
+        <div class="broker-bar-wrap"><div class="broker-bar-fill" style="left:50%;width:9%;background:rgba(74,222,128,.53)"></div><div class="broker-center"></div></div>
+        <span class="broker-net" style="color:#4ade80">+0.8B</span>
+        <span class="broker-note">Beli moderat</span>
+      </div>
+      <div class="broker-row">
+        <span class="broker-name" style="color:#4ade80">AK</span>
+        <span class="broker-side" style="color:#4ade80;background:rgba(74,222,128,.13)">BUY</span>
+        <div class="broker-bar-wrap"><div class="broker-bar-fill" style="left:50%;width:7%;background:rgba(74,222,128,.53)"></div><div class="broker-center"></div></div>
+        <span class="broker-net" style="color:#4ade80">+0.6B</span>
+        <span class="broker-note">Accumulate perlahan</span>
+      </div>
+      <div class="broker-row">
+        <span class="broker-name" style="color:#f97316">GR</span>
+        <span class="broker-side" style="color:#f97316;background:rgba(249,115,22,.13)">SELL</span>
+        <div class="broker-bar-wrap"><div class="broker-bar-fill" style="right:50%;width:13%;background:rgba(249,115,22,.53)"></div><div class="broker-center"></div></div>
+        <span class="broker-net" style="color:#f97316">-1.2B</span>
+        <span class="broker-note">Jual konsisten 1W</span>
+      </div>
+      <div class="broker-row">
+        <span class="broker-name" style="color:var(--red)">DP</span>
+        <span class="broker-side" style="color:var(--red);background:rgba(239,68,68,.13)">SELL</span>
+        <div class="broker-bar-wrap"><div class="broker-bar-fill" style="right:50%;width:31%;background:rgba(239,68,68,.53)"></div><div class="broker-center"></div></div>
+        <span class="broker-net" style="color:var(--red)">-2.8B</span>
+        <span class="broker-note">Distribusi terbesar &#9888;&#65039;</span>
+      </div>
+    </div>
+
+    <div class="divider"><div class="divider-line"></div><div class="divider-text">PROGRAM BUYBACK SAHAM</div><div class="divider-line"></div></div>
+
+    <div class="buyback-card" style="border:1px solid rgba(139,92,246,.2)">
+      <div class="section-title" style="color:var(--purple)">BUYBACK = SINYAL SMART MONEY MASUK PELAN-PELAN</div>
+      <div style="font-size:10px;color:var(--text);line-height:1.9">
+        Per 31 Maret 2026, HRUM telah membeli kembali
+        <strong style="color:var(--purple)">369.543.600 lembar saham</strong> senilai
+        <strong style="color:var(--gold)">USD 15.38 juta (sekitar Rp 256 Miliar)</strong>.
+        Sepanjang 2025 mereka beli tambahan
+        <strong style="color:var(--green)">101.6 juta lembar</strong>.
+        Manajemen melihat saham ini undervalued dan mau beli murah.
+      </div>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-card" style="border-top-color:var(--purple)"><div class="stat-label">Total Saham Tresuri</div><div class="stat-value" style="color:var(--purple)">369.5 Juta</div><div class="stat-sub">lembar</div></div>
+      <div class="stat-card" style="border-top-color:var(--gold)"><div class="stat-label">Nilai Total Buyback</div><div class="stat-value" style="color:var(--gold)">Rp 256 M</div><div class="stat-sub">USD 15.38 Juta</div></div>
+      <div class="stat-card" style="border-top-color:var(--green)"><div class="stat-label">Buyback 2025</div><div class="stat-value" style="color:var(--green)">101.6 Juta</div><div class="stat-sub">lembar +USD 5.27M</div></div>
+      <div class="stat-card" style="border-top-color:var(--muted)"><div class="stat-label">Buyback 1Q26</div><div class="stat-value" style="color:var(--muted)">0 lembar</div><div class="stat-sub">Pause &mdash; amati terus</div></div>
+    </div>
+
+    <div class="insight-row" style="border-color:var(--green)"><span class="insight-tag" style="color:var(--green)">&#10003; Positif: </span><span class="insight-txt">Buyback aktif 2024-2025 di area 900-1.100 membuktikan manajemen anggap harga itu murah.</span></div>
+    <div class="insight-row" style="border-color:var(--green)"><span class="insight-tag" style="color:var(--green)">&#10003; Positif: </span><span class="insight-txt">369.5M saham tresuri ~2.7% dari total. Jika dimatikan maka EPS naik otomatis.</span></div>
+    <div class="insight-row" style="border-color:#f97316"><span class="insight-tag" style="color:#f97316">&#9888; Waspada: </span><span class="insight-txt">1Q26: TIDAK ADA buyback baru. Finance cost naik +82% YoY. Kas lebih dipakai bayar bunga.</span></div>
+    <div class="insight-row" style="border-color:var(--purple)"><span class="insight-tag" style="color:var(--purple)">&#128161; Insight: </span><span class="insight-txt">Jika buyback RESUME di harga 950-1.000 maka ini sinyal kuat konfirmasi entry Remora.</span></div>
+
+  </div><!-- end page3 -->
+
+  <!-- ===== PAGE 4: SCORECARD & TRADE PLAN ===== -->
+  <div class="page" id="page4">
+
+    <div class="divider"><div class="divider-line"></div><div class="divider-text">SCORECARD 6 DIMENSI KANG YAYAN</div><div class="divider-line"></div></div>
+
+    <div class="score-total">
+      <div class="score-lbl">TOTAL SKOR HRUM</div>
+      <div class="score-num">15 <span class="score-sub">/24</span></div>
+      <div class="score-pct">63% &mdash; Belum Capai Threshold 75%</div>
+      <div class="score-bar-wrap"><div class="score-bar-fill" style="width:63%"></div></div>
+      <div class="score-note">Threshold Entry: 18/24 (75%) &mdash; STATUS: WATCH ONLY</div>
+    </div>
+
+    <div class="scorebar">
+      <div class="scorebar-head"><span class="scorebar-lbl">1. Fundamental</span><span class="scorebar-val" style="color:var(--green)">4/5</span></div>
+      <div class="scorebar-wrap"><div class="scorebar-fill" style="width:80%;background:var(--green)"></div></div>
+      <div class="scorebar-desc">Revenue +15.7%, Laba +272% YoY dahsyat. Kas $154M solid. Minus: Utang bank $617M dan finance cost naik 82% YoY.</div>
+    </div>
+    <div class="scorebar">
+      <div class="scorebar-head"><span class="scorebar-lbl">2. Price-Volume</span><span class="scorebar-val" style="color:#3b82f6">2/4</span></div>
+      <div class="scorebar-wrap"><div class="scorebar-fill" style="width:50%;background:#3b82f6"></div></div>
+      <div class="scorebar-desc">Harga masih downtrend dari ATH 2.400. Volume belum ada spike konfirmasi. Sinyal awal akumulasi mulai terlihat tapi belum confirmed.</div>
+    </div>
+    <div class="scorebar">
+      <div class="scorebar-head"><span class="scorebar-lbl">3. Bandarmology</span><span class="scorebar-val" style="color:var(--gold)">3/5</span></div>
+      <div class="scorebar-wrap"><div class="scorebar-fill" style="width:60%;background:var(--gold)"></div></div>
+      <div class="scorebar-desc">XL konsisten NET BUY semua timeframe. RX beli besar 3.8B. Tapi DP masih distribusi -2.8B. Foreign flow masih minus besar. Mixed signal.</div>
+    </div>
+    <div class="scorebar">
+      <div class="scorebar-head"><span class="scorebar-lbl">4. Trendline/SR</span><span class="scorebar-val" style="color:var(--purple)">2/4</span></div>
+      <div class="scorebar-wrap"><div class="scorebar-fill" style="width:50%;background:var(--purple)"></div></div>
+      <div class="scorebar-desc">Area 975-1.000 = support psikologis dan historis kuat. Belum ada reversal dikonfirmasi. Resistance kuat di 1.050-1.100.</div>
+    </div>
+    <div class="scorebar">
+      <div class="scorebar-head"><span class="scorebar-lbl">5. Bid-Offer</span><span class="scorebar-val" style="color:#06b6d4">2/3</span></div>
+      <div class="scorebar-wrap"><div class="scorebar-fill" style="width:67%;background:#06b6d4"></div></div>
+      <div class="scorebar-desc">Broker beli avg 993-997. Spread normal mid-cap. RX avg 996, YP avg 993. Arah masih mixed.</div>
+    </div>
+    <div class="scorebar">
+      <div class="scorebar-head"><span class="scorebar-lbl">6. Wyckoff</span><span class="scorebar-val" style="color:var(--red)">2/3</span></div>
+      <div class="scorebar-wrap"><div class="scorebar-fill" style="width:67%;background:var(--red)"></div></div>
+      <div class="scorebar-desc">Distribusi dari 2.400 sudah selesai. Sedang di Phase B/C. Perlu tunggu Spring konfirmasi sebelum aman masuk.</div>
+    </div>
+
+    <div class="divider"><div class="divider-line"></div><div class="divider-text">RISIKO YANG WAJIB DIPAHAMI</div><div class="divider-line"></div></div>
+
+    <div class="risk-item" style="border-color:var(--red)"><div class="risk-title" style="color:var(--red)">&#128184; Finance Cost Meledak</div><div class="risk-desc">Beban keuangan 1Q26: USD 20.4 juta naik 82% dari USD 11.2 juta setahun lalu. Utang ke NCI subsidiaries USD 763 juta terus menggerus laba bersih.</div></div>
+    <div class="risk-item" style="border-color:#f97316"><div class="risk-title" style="color:#f97316">&#9889; Volatile Nickel Price</div><div class="risk-desc">96% revenue dari nickel smelter. Jika harga nikel LME global turun signifikan, revenue HRUM ikut jatuh. Sangat sensitif terhadap sentimen EV global.</div></div>
+    <div class="risk-item" style="border-color:#f97316"><div class="risk-title" style="color:#f97316">&#127754; Foreign Flow Masih Minus</div><div class="risk-desc">Foreign flow YTD 2026 masih minus besar. Asing terus jual. Sebelum foreign mulai beli, harga sulit sustained rally.</div></div>
+    <div class="risk-item" style="border-color:var(--gold)"><div class="risk-title" style="color:var(--gold)">&#128295; Buyback Pause 1Q26</div><div class="risk-desc">Tidak ada buyback baru di 1Q26. Kas lebih dipakai bayar bunga utang. Jika buyback resume maka itu bullish signal kuat.</div></div>
+
+    <div class="divider"><div class="divider-line"></div><div class="divider-text">TRADE PLAN METODE KANG YAYAN</div><div class="divider-line"></div></div>
+
+    <div class="trade-row" style="border-color:var(--gold)"><div class="trade-label">Status Sekarang</div><div><div class="trade-value" style="color:var(--gold)">WATCH ONLY</div><div class="trade-note">Belum entry. Skor belum capai threshold.</div></div></div>
+    <div class="trade-row" style="border-color:var(--green)"><div class="trade-label">Entry Ideal</div><div><div class="trade-value" style="color:var(--green)">Rp 950-975</div><div class="trade-note">Tunggu Spring + broksum XL/RX beli masif</div></div></div>
+    <div class="trade-row" style="border-color:#3b82f6"><div class="trade-label">Entry Partial</div><div><div class="trade-value" style="color:#3b82f6">Rp 995-1.010</div><div class="trade-note">Max 3-4% portofolio. Hanya jika XL+RX terus buy</div></div></div>
+    <div class="trade-row" style="border-color:#3b82f6"><div class="trade-label">Target 1</div><div><div class="trade-value" style="color:#3b82f6">Rp 1.100</div><div class="trade-note">Partial profit 30% di resistance pertama</div></div></div>
+    <div class="trade-row" style="border-color:var(--purple)"><div class="trade-label">Target 2</div><div><div class="trade-value" style="color:var(--purple)">Rp 1.250</div><div class="trade-note">Partial profit 40% &mdash; area distribusi lama</div></div></div>
+    <div class="trade-row" style="border-color:var(--purple)"><div class="trade-label">Runner Target</div><div><div class="trade-value" style="color:var(--purple)">Rp 1.400+</div><div class="trade-note">Jika nickel global rally + buyback resume</div></div></div>
+    <div class="trade-row" style="border-color:var(--red)"><div class="trade-label">Stop Loss</div><div><div class="trade-value" style="color:var(--red)">Rp 900</div><div class="trade-note">Cut jika break support mayor. Review thesis ulang.</div></div></div>
+
+    <div class="divider"><div class="divider-line"></div><div class="divider-text">ENDING CERITA HRUM</div><div class="divider-line"></div></div>
+
+    <div class="ending-card">
+      <div class="ending-title">
+        HRUM sedang menulis ulang identitasnya &mdash; dari raja batu bara menjadi tuan nikel.
+        <span style="color:var(--gold)"> Tapi proses metamorfosis ini belum selesai.</span>
+      </div>
+      <div class="ending-body">
+        Fundamental sudah sangat membaik: laba +272%, revenue naik, HPAL produktif.
+        Manajemen sudah beli saham sendiri senilai Rp 256 Miliar.
+        Broker XL terus accumulate di semua timeframe.<br/><br/>
+        Tapi harga masih turun. Foreign masih jual. DP masih distribusi.
+        Ini bukan saham yang sudah siap meledak &mdash;
+        ini saham yang <em style="color:var(--accent)">sedang disiapkan untuk meledak</em>.
+      </div>
+      <div class="quote">
+        <div class="quote-text">&ldquo;Remora yang baik tidak masuk saat ikan hiu sedang berputar-putar. Ia masuk saat ikan hiu sudah mantap berenang ke satu arah.&rdquo;</div>
+        <div class="quote-author">&mdash; Metode Kang Yayan &mdash; Remora Academy</div>
+      </div>
+      <div class="ending-decision">
+        <div class="ending-dec-title">&#127919; Keputusan Akhir:</div>
+        <div class="ending-dec-body">
+          <strong style="color:#f97316">Masukkan ke Watchlist Prioritas.</strong> Pantau broksum harian.
+          Jika <strong style="color:var(--green)">DP flip ke buy + XL/RX masih beli + harga hold 1.000</strong>
+          maka itu sinyal Remora masuk.
+          Jika tidak ada konfirmasi maka <strong style="color:var(--red)">jangan FOMO masuk</strong>.
+          Patience adalah senjata utama trader Remora.
+        </div>
+      </div>
+    </div>
+
+    <div class="footer-txt">
+      Cerita saham ini menggunakan Metode Kang Yayan &mdash; Remora Academy (Maxfren/Hengky Adinata)<br/>
+      Berbasis LK HRUM 1Q26 + Broker Flow 30 Apr 2026<br/>
+      <strong>Bersifat edukatif, bukan rekomendasi beli/jual</strong><br/>
+      Selalu manage risk dan lakukan riset mandiri
+    </div>
+
+  </div><!-- end page4 -->
+
+  <!-- NAVIGATION -->
+  <div class="nav-bar">
+    <button class="nav-btn nav-prev" id="btnPrev" onclick="goPage(currentPage-1)" disabled>&#9664; Kembali</button>
+    <div class="nav-lbl" id="navLbl">Cerita &amp; Timeline</div>
+    <button class="nav-btn nav-next" id="btnNext" onclick="goPage(currentPage+1)">Lanjut &#9654;</button>
+  </div>
+
+</div><!-- end content -->
+
+<script>
+  var currentPage = 1;
+  var totalPages  = 4;
+  var pageNames   = [
+    "Cerita & Timeline",
+    "Fundamental & HPAL",
+    "Bandar & Buyback",
+    "Scorecard & Trade Plan"
+  ];
+
+  function goPage(n) {
+    if (n < 1 || n > totalPages) return;
+
+    // hide old page
+    document.getElementById("page" + currentPage).classList.remove("active");
+    document.getElementById("dot"  + currentPage).classList.remove("active");
+
+    currentPage = n;
+
+    // show new page
+    document.getElementById("page" + currentPage).classList.add("active");
+    document.getElementById("dot"  + currentPage).classList.add("active");
+
+    // update labels
+    document.getElementById("pageLabel").textContent = "Halaman " + currentPage + " / " + totalPages;
+    document.getElementById("navLbl").textContent    = pageNames[currentPage - 1];
+
+    // update buttons
+    document.getElementById("btnPrev").disabled = (currentPage === 1);
+    document.getElementById("btnNext").disabled = (currentPage === totalPages);
+
+    // scroll to top
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+</script>
+</body>
+</html>
