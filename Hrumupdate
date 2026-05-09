@@ -1,0 +1,1224 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HRUM — Backtest Metode Kang Yayan v3 | 9 Mei 2026</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Bebas+Neue&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:      #060a0f;
+  --bg2:     #0a1118;
+  --bg3:     #0e1825;
+  --border:  #1a2535;
+  --border2: #243347;
+  --text:    #d4e0ef;
+  --muted:   #4a6080;
+  --muted2:  #7a96b5;
+  --accent:  #38bdf8;
+  --green:   #34d399;
+  --green2:  #10b981;
+  --red:     #f87171;
+  --red2:    #ef4444;
+  --orange:  #fb923c;
+  --yellow:  #fbbf24;
+  --purple:  #a78bfa;
+  --cyan:    #22d3ee;
+  --alert:   #ff4444;
+  --alert-bg:#1a0808;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Syne', sans-serif;
+  font-size: 14px;
+  line-height: 1.6;
+  min-height: 100vh;
+}
+
+/* ── ALERT BANNER ── */
+.alert-banner {
+  background: var(--alert-bg);
+  border-bottom: 2px solid var(--alert);
+  padding: 10px 24px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  animation: pulse-alert 2s infinite;
+}
+@keyframes pulse-alert {
+  0%,100% { border-color: #ff4444; }
+  50% { border-color: #ff8888; }
+}
+.alert-icon { font-size: 20px; }
+.alert-text { font-family: 'Space Mono', monospace; font-size: 12px; color: #ff8888; }
+.alert-text strong { color: #ff4444; font-size: 13px; }
+
+/* ── HEADER ── */
+.header {
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  padding: 20px 24px 16px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.header-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.ticker-block { display: flex; align-items: center; gap: 16px; }
+.ticker {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 42px;
+  color: var(--accent);
+  letter-spacing: 2px;
+  line-height: 1;
+}
+.ticker-sub { font-family: 'Space Mono', monospace; font-size: 11px; color: var(--muted2); line-height: 1.7; }
+.price-block { text-align: right; }
+.price-main {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 38px;
+  color: var(--red);
+  line-height: 1;
+}
+.price-change {
+  font-family: 'Space Mono', monospace;
+  font-size: 13px;
+  color: var(--red2);
+  font-weight: 700;
+}
+.price-meta { font-family: 'Space Mono', monospace; font-size: 10px; color: var(--muted2); margin-top: 2px; }
+.badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 4px;
+  font-family: 'Space Mono', monospace;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+.badge-warning { background: #2a1500; color: var(--orange); border: 1px solid #4a2800; }
+.badge-danger  { background: var(--alert-bg); color: var(--alert); border: 1px solid #3a0000; }
+.badge-ok      { background: #001a0d; color: var(--green); border: 1px solid #003320; }
+.badge-neutral { background: #131d2a; color: var(--muted2); border: 1px solid var(--border2); }
+
+/* ── TABS ── */
+.tabs {
+  display: flex;
+  gap: 2px;
+  margin-top: 14px;
+  border-bottom: 1px solid var(--border);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.tabs::-webkit-scrollbar { display: none; }
+.tab {
+  padding: 8px 16px;
+  font-family: 'Space Mono', monospace;
+  font-size: 11px;
+  color: var(--muted2);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  white-space: nowrap;
+  transition: all 0.2s;
+  background: none;
+  border-top: none;
+  border-left: none;
+  border-right: none;
+}
+.tab:hover { color: var(--text); }
+.tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+/* ── MAIN ── */
+.main { padding: 20px 24px; max-width: 1000px; margin: 0 auto; }
+.panel { display: none; }
+.panel.active { display: block; }
+
+/* ── CARDS ── */
+.card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+.card-title {
+  font-family: 'Space Mono', monospace;
+  font-size: 11px;
+  color: var(--muted2);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.card-title::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+/* ── GRID ── */
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+.grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+@media(max-width:600px) {
+  .grid-4 { grid-template-columns: repeat(2,1fr); }
+  .grid-3 { grid-template-columns: 1fr 1fr; }
+  .grid-2 { grid-template-columns: 1fr; }
+}
+
+/* ── KPI CARDS ── */
+.kpi {
+  background: var(--bg3);
+  border: 1px solid var(--border2);
+  border-radius: 6px;
+  padding: 12px 14px;
+}
+.kpi-label { font-family: 'Space Mono', monospace; font-size: 10px; color: var(--muted); letter-spacing: 0.5px; margin-bottom: 4px; }
+.kpi-value { font-family: 'Bebas Neue', sans-serif; font-size: 22px; line-height: 1; color: var(--text); }
+.kpi-sub { font-family: 'Space Mono', monospace; font-size: 10px; color: var(--muted2); margin-top: 2px; }
+
+/* ── CHART CONTAINER ── */
+.chart-wrap { position: relative; height: 240px; }
+.chart-wrap-tall { position: relative; height: 300px; }
+
+/* ── TABLE ── */
+.tbl { width: 100%; border-collapse: collapse; font-family: 'Space Mono', monospace; font-size: 11px; }
+.tbl th { color: var(--muted2); text-transform: uppercase; letter-spacing: 0.5px; font-size: 10px; padding: 6px 10px; border-bottom: 1px solid var(--border); text-align: left; font-weight: 400; }
+.tbl td { padding: 7px 10px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+.tbl tr:last-child td { border-bottom: none; }
+.tbl tr:hover td { background: var(--bg3); }
+.tbl .num { text-align: right; font-variant-numeric: tabular-nums; }
+
+/* ── BROKER ROWS ── */
+.br-buy  td { color: var(--green); }
+.br-sell td { color: var(--red2); }
+.br-neutral td { color: var(--muted2); }
+
+/* ── SCORECARD ── */
+.score-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.score-name { font-family: 'Space Mono', monospace; font-size: 11px; color: var(--text); width: 130px; flex-shrink: 0; }
+.score-bar-wrap { flex: 1; height: 8px; background: var(--border); border-radius: 4px; overflow: hidden; }
+.score-bar { height: 100%; border-radius: 4px; transition: width 0.8s ease; }
+.score-num { font-family: 'Space Mono', monospace; font-size: 11px; color: var(--muted2); width: 36px; text-align: right; flex-shrink: 0; }
+.score-total-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-top: 1px solid var(--border);
+  padding-top: 10px;
+  margin-top: 4px;
+}
+.score-total-label { font-family: 'Space Mono', monospace; font-size: 12px; color: var(--muted2); }
+.score-total-val { font-family: 'Bebas Neue', sans-serif; font-size: 28px; color: var(--yellow); }
+
+/* ── WYCKOFF PHASE ── */
+.wyckoff-strip {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 12px;
+  overflow-x: auto;
+}
+.wy-phase {
+  flex: 1;
+  min-width: 60px;
+  padding: 8px 6px;
+  border-radius: 5px;
+  text-align: center;
+  border: 1px solid transparent;
+  font-family: 'Space Mono', monospace;
+  font-size: 10px;
+}
+.wy-phase.past   { background: #0e1825; color: var(--muted); border-color: var(--border); }
+.wy-phase.active { background: #1a2a0a; color: #86efac; border-color: #365314; }
+.wy-phase.risk   { background: #1a0808; color: #fca5a5; border-color: #7f1d1d; }
+.wy-phase-label  { font-size: 9px; opacity: 0.7; margin-top: 2px; }
+
+/* ── RISK ── */
+.risk-item {
+  border-left: 3px solid;
+  padding: 10px 12px;
+  margin-bottom: 8px;
+  background: var(--bg3);
+  border-radius: 0 4px 4px 0;
+}
+.risk-title { font-weight: 700; font-size: 12px; margin-bottom: 4px; }
+.risk-desc  { font-size: 12px; color: var(--muted2); line-height: 1.5; }
+
+/* ── TRADE PLAN ── */
+.tp-row {
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+  margin-bottom: 4px;
+}
+.tp-tag {
+  font-family: 'Space Mono', monospace;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  padding: 8px 12px;
+  width: 90px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  border-radius: 4px 0 0 4px;
+}
+.tp-content {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-left: none;
+  border-radius: 0 4px 4px 0;
+  padding: 8px 12px;
+  flex: 1;
+  font-family: 'Space Mono', monospace;
+  font-size: 11px;
+}
+.tp-price { font-size: 14px; font-weight: 700; color: var(--text); }
+.tp-note  { font-size: 10px; color: var(--muted2); margin-top: 2px; }
+
+/* ── SIGNAL TIMELINE ── */
+.sig-item {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 12px;
+  position: relative;
+}
+.sig-dot {
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  margin-top: 4px;
+  position: relative;
+  z-index: 1;
+}
+.sig-dot::after {
+  content: '';
+  position: absolute;
+  left: 4px; top: 10px;
+  width: 2px;
+  height: calc(100% + 10px);
+  background: var(--border);
+}
+.sig-item:last-child .sig-dot::after { display: none; }
+.sig-body { flex: 1; }
+.sig-period { font-family: 'Space Mono', monospace; font-size: 10px; color: var(--muted); }
+.sig-action { font-family: 'Bebas Neue', sans-serif; font-size: 18px; line-height: 1; margin: 2px 0; }
+.sig-price  { font-family: 'Space Mono', monospace; font-size: 12px; color: var(--text); }
+.sig-reason { font-size: 12px; color: var(--muted2); }
+.sig-result {
+  font-family: 'Space Mono', monospace;
+  font-size: 11px;
+  font-weight: 700;
+  margin-top: 4px;
+}
+
+/* ── CHECKLIST ── */
+.chk-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 12px;
+}
+.chk-item:last-child { border-bottom: none; }
+.chk-icon { font-size: 14px; flex-shrink: 0; margin-top: 1px; }
+.chk-label { flex: 1; color: var(--text); }
+.chk-status { font-family: 'Space Mono', monospace; font-size: 10px; flex-shrink: 0; }
+
+/* ── INFO BOX ── */
+.infobox {
+  background: var(--bg3);
+  border: 1px solid var(--border2);
+  border-radius: 6px;
+  padding: 12px 14px;
+  font-size: 12px;
+  color: var(--muted2);
+  line-height: 1.6;
+  margin-bottom: 12px;
+}
+.infobox strong { color: var(--text); }
+
+/* ── SCENARIO ── */
+.scenario-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; }
+@media(max-width:500px){ .scenario-grid { grid-template-columns: 1fr; } }
+.scenario-card {
+  border: 1px solid;
+  border-radius: 6px;
+  padding: 12px;
+  text-align: center;
+}
+.s-icon  { font-size: 24px; margin-bottom: 6px; }
+.s-label { font-family: 'Space Mono', monospace; font-size: 10px; text-transform: uppercase; letter-spacing: 1px; opacity: 0.7; }
+.s-price { font-family: 'Bebas Neue', sans-serif; font-size: 28px; line-height: 1; margin: 4px 0; }
+.s-prob  { font-family: 'Space Mono', monospace; font-size: 11px; opacity: 0.8; }
+.s-basis { font-size: 11px; opacity: 0.65; margin-top: 4px; line-height: 1.4; }
+
+/* ── FOOTER ── */
+.footer {
+  text-align: center;
+  padding: 20px 24px;
+  font-family: 'Space Mono', monospace;
+  font-size: 10px;
+  color: var(--muted);
+  border-top: 1px solid var(--border);
+  line-height: 1.8;
+}
+.divider { height: 1px; background: var(--border); margin: 12px 0; }
+</style>
+</head>
+<body>
+
+<!-- ALERT BANNER -->
+<div class="alert-banner">
+  <span class="alert-icon">⚠️</span>
+  <div class="alert-text">
+    <strong>ALERT 8 MEI 2026:</strong> XL (Stockbit) FLIP NET SELL — Dump Rp 3,2 Miliar (33K lot avg 954) &nbsp;|&nbsp; Harga 910 (-8.08%) &nbsp;|&nbsp; Volume Abnormal 353K lot &nbsp;|&nbsp; SL di 900 = JARAK 10 POIN
+  </div>
+</div>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-top">
+    <div class="ticker-block">
+      <div class="ticker">HRUM</div>
+      <div class="ticker-sub">
+        PT Harum Energy Tbk<br>
+        Coal + Nickel Smelter (HPAL/MHP)<br>
+        <span class="badge badge-warning">⚡ PHASE B/C — SPRING ZONE?</span>
+      </div>
+    </div>
+    <div class="price-block">
+      <div class="price-main">910</div>
+      <div class="price-change">▼ 80 &nbsp;-8.08%</div>
+      <div class="price-meta">Close 990 kemarin &nbsp;|&nbsp; Vol: 353,628 lot<br>52W: 760 – 1.305 &nbsp;|&nbsp; Update: 8 Mei 2026</div>
+    </div>
+  </div>
+  <div class="tabs">
+    <button class="tab active" onclick="showTab('dash')">📊 Dashboard</button>
+    <button class="tab" onclick="showTab('fundamental')">📈 Fundamental</button>
+    <button class="tab" onclick="showTab('bandar')">🏦 Bandarmology</button>
+    <button class="tab" onclick="showTab('scorecard')">🎯 Scorecard</button>
+    <button class="tab" onclick="showTab('trade')">💼 Trade Plan</button>
+  </div>
+</div>
+
+<div class="main">
+
+<!-- ════════════════════════════════════════════ TAB 1: DASHBOARD -->
+<div id="tab-dash" class="panel active">
+
+  <!-- KPI Row -->
+  <div class="grid-4" style="margin-bottom:16px">
+    <div class="kpi" style="border-color:#3d1a1a">
+      <div class="kpi-label">HARGA SEKARANG</div>
+      <div class="kpi-value" style="color:var(--red)">910</div>
+      <div class="kpi-sub" style="color:var(--red2)">-8.08% hari ini</div>
+    </div>
+    <div class="kpi" style="border-color:#3d1a1a">
+      <div class="kpi-label">VOLUME HARI INI</div>
+      <div class="kpi-value" style="color:var(--orange)">353K</div>
+      <div class="kpi-sub">lot — ABNORMAL SPIKE</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">JARAK KE STOP LOSS</div>
+      <div class="kpi-value" style="color:var(--red2)">10</div>
+      <div class="kpi-sub">poin dari SL 900</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">REVENUE NIKEL 1Q26</div>
+      <div class="kpi-value" style="color:var(--green)">334M</div>
+      <div class="kpi-sub">USD +92% YoY</div>
+    </div>
+  </div>
+
+  <!-- Chart Harga Monthly -->
+  <div class="card">
+    <div class="card-title">🕯️ Perjalanan Harga — Bulanan</div>
+    <div class="chart-wrap">
+      <canvas id="priceChart"></canvas>
+    </div>
+  </div>
+
+  <!-- Wyckoff Phase -->
+  <div class="card">
+    <div class="card-title">🌊 Wyckoff Phase Mapping</div>
+    <div class="wyckoff-strip">
+      <div class="wy-phase past">
+        <div>A</div>
+        <div class="wy-phase-label">Distribusi<br>ATH 2.400</div>
+      </div>
+      <div class="wy-phase past">
+        <div>B</div>
+        <div class="wy-phase-label">Markdown<br>2022–2024</div>
+      </div>
+      <div class="wy-phase past">
+        <div>B/C</div>
+        <div class="wy-phase-label">Akumulasi<br>Diam-diam</div>
+      </div>
+      <div class="wy-phase risk">
+        <div>⚡ C?</div>
+        <div class="wy-phase-label">SPRING<br>8 Mei 2026</div>
+      </div>
+      <div class="wy-phase past">
+        <div>D</div>
+        <div class="wy-phase-label">Markup<br>→ target</div>
+      </div>
+      <div class="wy-phase past">
+        <div>E</div>
+        <div class="wy-phase-label">Breakout<br>1.300+</div>
+      </div>
+    </div>
+    <div class="infobox">
+      <strong>Status 8 Mei:</strong> Penurunan -8% dengan volume 353K lot bisa menjadi <strong>Spring kandidat</strong> (Phase C dalam Wyckoff) — ini adalah shakeout terakhir sebelum markup. <strong>TAPI</strong> perlu dikonfirmasi: apakah XL dump adalah final distribution atau hanya pass ke YP sebagai bandar baru. <strong>Dua hari berikutnya krusial.</strong>
+    </div>
+  </div>
+
+  <!-- Scenario -->
+  <div class="card">
+    <div class="card-title">🎲 Skenario Harga — Updated 8 Mei 2026</div>
+    <div class="scenario-grid">
+      <div class="scenario-card" style="border-color:#22c55e30; background:#001a0d20">
+        <div class="s-icon">🚀</div>
+        <div class="s-label">Bull Case</div>
+        <div class="s-price" style="color:var(--green)">1.300</div>
+        <div class="s-prob" style="color:var(--green)">Prob: 25%</div>
+        <div class="s-basis" style="color:var(--muted2)">YP konfirmasi bandar baru, RKAB coal keluar, MHP 80%</div>
+      </div>
+      <div class="scenario-card" style="border-color:#3b82f630; background:#00122020">
+        <div class="s-icon">📊</div>
+        <div class="s-label">Base Case</div>
+        <div class="s-price" style="color:#60a5fa">1.050</div>
+        <div class="s-prob" style="color:#60a5fa">Prob: 40%</div>
+        <div class="s-basis" style="color:var(--muted2)">Konsolidasi 880–980 dulu, lalu recovery bertahap</div>
+      </div>
+      <div class="scenario-card" style="border-color:#ef444430; background:#1a000020">
+        <div class="s-icon">💥</div>
+        <div class="s-label">Bear Case</div>
+        <div class="s-price" style="color:var(--red)">760</div>
+        <div class="s-prob" style="color:var(--red2)">Prob: 35%</div>
+        <div class="s-basis" style="color:var(--muted2)">SL 900 tembus, XL distribusi besar, break support mayor</div>
+      </div>
+    </div>
+    <div class="infobox" style="margin-top:12px; border-color:#3d1a1a">
+      ⚠️ <strong>Bear case naik ke 35%</strong> (dari 25%) karena XL flip dan volume abnormal. Probabilitas tidak menguntungkan vs sebelumnya.
+    </div>
+  </div>
+
+</div><!-- /tab-dash -->
+
+<!-- ════════════════════════════════════════════ TAB 2: FUNDAMENTAL -->
+<div id="tab-fundamental" class="panel">
+
+  <!-- Revenue & Profit Chart -->
+  <div class="card">
+    <div class="card-title">💰 Revenue & Net Profit — Historis per Kuartal</div>
+    <div class="chart-wrap-tall">
+      <canvas id="fundChart"></canvas>
+    </div>
+  </div>
+
+  <!-- LK 1Q26 Highlights -->
+  <div class="card">
+    <div class="card-title">📋 LK 1Q26 — Highlight Utama</div>
+    <div class="grid-2">
+      <div>
+        <table class="tbl">
+          <thead><tr><th>Metrik</th><th class="num">Nilai</th><th class="num">YoY</th></tr></thead>
+          <tbody>
+            <tr><td>Total Revenue</td><td class="num" style="color:var(--cyan)">USD 345.9M</td><td class="num" style="color:var(--green)">+15.7%</td></tr>
+            <tr><td>Rev Nikel</td><td class="num" style="color:var(--cyan)">USD 334.1M</td><td class="num" style="color:var(--green)">+92%</td></tr>
+            <tr><td>Rev Batubara</td><td class="num" style="color:var(--red2)">USD 6.2M</td><td class="num" style="color:var(--red2)">-95%</td></tr>
+            <tr><td>Gross Profit</td><td class="num">USD 64.6M</td><td class="num" style="color:var(--green)">+8.4%</td></tr>
+            <tr><td>Net Profit (kons)</td><td class="num" style="color:var(--green)">USD 27.1M</td><td class="num" style="color:var(--green)">+272%</td></tr>
+            <tr><td>Laba ke Induk</td><td class="num">USD 8.9M</td><td class="num" style="color:var(--green)">+60%</td></tr>
+            <tr><td>Finance Cost</td><td class="num" style="color:var(--red2)">USD 20.4M</td><td class="num" style="color:var(--red2)">+82%</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div>
+        <table class="tbl">
+          <thead><tr><th>Balance Sheet</th><th class="num">Nilai</th></tr></thead>
+          <tbody>
+            <tr><td>Kas & Setara</td><td class="num" style="color:var(--green)">USD 154.8M</td></tr>
+            <tr><td>Utang Bank</td><td class="num" style="color:var(--red2)">USD 617M</td></tr>
+            <tr><td>Utang ke NCI</td><td class="num" style="color:var(--red2)">USD 763.8M</td></tr>
+            <tr><td>Total Aset</td><td class="num">USD 3.69B</td></tr>
+            <tr><td>Total Ekuitas</td><td class="num">USD 1.85B</td></tr>
+            <tr><td>Saham Tresuri</td><td class="num">369.5M lbr</td></tr>
+            <tr><td>Buyback 1Q26</td><td class="num" style="color:var(--yellow)">0 (PAUSE)</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Segmen Chart -->
+  <div class="card">
+    <div class="card-title">⚙️ Segmen Revenue: Nickel Smelter Dominan</div>
+    <div class="chart-wrap">
+      <canvas id="segmentChart"></canvas>
+    </div>
+    <div class="infobox" style="margin-top:12px">
+      <strong>Coal Stockpile Thesis (Hermanto Sardan):</strong> MSJ/Santan/BKP produksi NORMAL di Q1 tapi belum shipment. Stok batubara sudah ada di stockpile, menunggu RKAB resmi. Pembayaran ke pemasok sudah keluar tapi penerimaan dari pelanggan belum masuk. Ini <strong>hidden upside</strong> — begitu RKAB keluar, revenue coal bisa muncul tiba-tiba di Q2/Q3.
+    </div>
+  </div>
+
+  <!-- HPAL Status -->
+  <div class="card">
+    <div class="card-title">🔬 HPAL Nikel — Status Anak Usaha</div>
+    <table class="tbl">
+      <thead><tr><th>Entitas</th><th>Kepemilikan</th><th>Aset</th><th>Status 1Q26</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><strong style="color:var(--cyan)">BSE</strong> (Blue Sparking Energy)</td>
+          <td>25.89%</td>
+          <td>USD 1.953B</td>
+          <td><span class="badge badge-warning">~50% kapasitas</span></td>
+        </tr>
+        <tr>
+          <td><strong>WMI</strong> (Westrong Metal)</td>
+          <td>40.97%</td>
+          <td>USD 747M</td>
+          <td><span class="badge badge-ok">Produksi aktif</span></td>
+        </tr>
+        <tr>
+          <td><strong>IMI</strong> (Infei Metal)</td>
+          <td>50.77%</td>
+          <td>USD 198M</td>
+          <td><span class="badge badge-ok">Produksi aktif</span></td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="infobox" style="margin-top:12px">
+      Target BSE = <strong>80% kapasitas FY2026</strong>. Ramp-up dari 2Q26. MHP USD 80M di 1Q26 = baru mulai akhir Maret. Proyeksi revenue kuartal jika MHP 80% + coal normal: <strong>USD 450–550M/kuartal</strong>.
+    </div>
+  </div>
+
+  <!-- Proyeksi -->
+  <div class="card">
+    <div class="card-title">🔭 Proyeksi FY2026</div>
+    <div class="chart-wrap">
+      <canvas id="projChart"></canvas>
+    </div>
+  </div>
+
+</div><!-- /tab-fundamental -->
+
+<!-- ════════════════════════════════════════════ TAB 3: BANDARMOLOGY -->
+<div id="tab-bandar" class="panel">
+
+  <!-- ALERT XL FLIP -->
+  <div class="card" style="border-color:var(--alert); background:#0f0404">
+    <div class="card-title" style="color:var(--alert)">🚨 ALERT KRITIS — XL FLIP 8 MEI 2026</div>
+    <div class="grid-2">
+      <div>
+        <div class="infobox" style="border-color:var(--alert); background:#1a0000">
+          <strong style="color:var(--red)">XL (Stockbit Sekuritas Digital)</strong> adalah broker yang menjadi <strong>trigger entry utama</strong> di scorecard sebelumnya. Hari ini XL dump <strong>Rp 3.2 Miliar (33,300 lot)</strong> di avg 954.
+          <br><br>
+          Ini mengubah status trigger #1 dari <span class="badge badge-ok">✅ TERPENUHI</span> menjadi <span class="badge badge-danger">❌ GUGUR</span>
+        </div>
+      </div>
+      <div>
+        <table class="tbl">
+          <thead><tr><th>Tanggal</th><th class="num">Aksi XL</th><th class="num">Nilai</th><th class="num">Avg</th></tr></thead>
+          <tbody>
+            <tr><td style="color:var(--muted2)">4 Mei</td><td class="num" style="color:var(--green)">▲ BUY</td><td class="num" style="color:var(--green)">+178M</td><td class="num">998</td></tr>
+            <tr><td style="color:var(--muted2)">5 Mei</td><td class="num" style="color:var(--red2)">▼ SELL</td><td class="num" style="color:var(--red2)">-351M</td><td class="num">987</td></tr>
+            <tr><td style="color:var(--muted2)">6 Mei</td><td class="num" style="color:var(--red2)">▼ SELL</td><td class="num" style="color:var(--red2)">-44.7M</td><td class="num">983</td></tr>
+            <tr><td style="color:var(--muted2)">7 Mei</td><td class="num" style="color:var(--red2)">▼ SELL</td><td class="num" style="color:var(--red2)">-498M</td><td class="num">996</td></tr>
+            <tr style="background:#1a0808"><td><strong style="color:var(--red)">8 Mei ⚡</strong></td><td class="num" style="color:var(--red)"><strong>▼▼ DUMP</strong></td><td class="num" style="color:var(--red)"><strong>-3.2B</strong></td><td class="num" style="color:var(--red)"><strong>954</strong></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Broker Flow Chart -->
+  <div class="card">
+    <div class="card-title">📊 Broker Flow — 2 Mei s/d 8 Mei 2026</div>
+    <div class="chart-wrap-tall">
+      <canvas id="brokerFlowChart"></canvas>
+    </div>
+    <div class="infobox" style="margin-top:10px">
+      <strong>Pola 8 Mei:</strong> Semua broker koordinasi keluar bersamaan mulai pukul 15:09. XL, YB, SQ, FS — semua flip sell di sesi akhir. Pola ini tidak lazim untuk akumulasi biasa.
+    </div>
+  </div>
+
+  <!-- Broker Summary 8 Mei -->
+  <div class="card">
+    <div class="card-title">🏦 Broker Summary — 8 Mei 2026 (Net Mode)</div>
+    <div class="grid-2">
+      <div>
+        <div style="font-family:'Space Mono',monospace; font-size:10px; color:var(--green); margin-bottom:8px; letter-spacing:1px;">▲ PEMBELI TERBESAR</div>
+        <table class="tbl">
+          <thead><tr><th>Broker</th><th class="num">Nilai</th><th class="num">Lot</th><th class="num">Avg</th><th>Keterangan</th></tr></thead>
+          <tbody>
+            <tr class="br-buy"><td><strong>YP</strong></td><td class="num">3.7B</td><td class="num">39.9K</td><td class="num">940</td><td style="font-size:10px;color:var(--yellow)">⭐ TERBESAR — kandidat bandar baru?</td></tr>
+            <tr class="br-buy"><td>YB</td><td class="num">2.0B</td><td class="num">21.3K</td><td class="num">955</td><td style="font-size:10px;color:var(--muted2)">Beli besar di harga turun</td></tr>
+            <tr class="br-buy"><td>AK</td><td class="num">1.8B</td><td class="num">18K</td><td class="num">966</td><td style="font-size:10px;color:var(--muted2)">UBS — konsisten</td></tr>
+            <tr class="br-buy"><td>KK</td><td class="num">957M</td><td class="num">9.8K</td><td class="num">962</td><td style="font-size:10px;color:var(--muted2)">Masuk di harga turun</td></tr>
+            <tr class="br-buy"><td>PC</td><td class="num">854M</td><td class="num">9.1K</td><td class="num">941</td><td style="font-size:10px;color:var(--muted2)">Ikut beli</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div>
+        <div style="font-family:'Space Mono',monospace; font-size:10px; color:var(--red2); margin-bottom:8px; letter-spacing:1px;">▼ PENJUAL (estimasi)</div>
+        <table class="tbl">
+          <thead><tr><th>Broker</th><th class="num">Nilai</th><th class="num">Lot</th><th class="num">Avg</th><th>Keterangan</th></tr></thead>
+          <tbody>
+            <tr class="br-sell"><td><strong>XL</strong></td><td class="num">-3.2B</td><td class="num">33.3K</td><td class="num">954</td><td style="font-size:10px;color:var(--red)">⚠️ FLIP BESAR — ex-bandar</td></tr>
+            <tr class="br-sell"><td>SQ</td><td class="num">—</td><td class="num">—</td><td class="num">—</td><td style="font-size:10px;color:var(--muted2)">Sell (data chart)</td></tr>
+            <tr class="br-sell"><td>FS</td><td class="num">—</td><td class="num">—</td><td class="num">—</td><td style="font-size:10px;color:var(--muted2)">Sell (data chart)</td></tr>
+          </tbody>
+        </table>
+        <div class="infobox" style="margin-top:12px; border-color:#2a1800">
+          <strong style="color:var(--yellow)">Hipotesis Pass-Off:</strong> XL mungkin "pass posisi" ke YP di harga lebih rendah (XL avg masuk ~993–998, jual di 954 = rugi sementara). YP masuk 3.7B di 940. Pola ini terjadi di distribusi TAPI juga di re-accumulation sebelum markup. <strong>Perlu 2–3 hari konfirmasi.</strong>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Weekly Broker Chart -->
+  <div class="card">
+    <div class="card-title">📅 Broker Flow Weekly — 2–8 Mei 2026</div>
+    <div class="chart-wrap">
+      <canvas id="brokerWeekChart"></canvas>
+    </div>
+    <div class="infobox" style="margin-top:10px">
+      Dari chart mingguan: <strong>YP (merah tua)</strong> sudah build position sejak 4 Mei, konsisten naik kumulatif ke ~2B sebelum 8 Mei, lalu spike besar di 8 Mei. <strong>SQ (oranye)</strong> dan <strong>FS (kuning)</strong> distribusi. <strong>XL turun</strong> tajam di akhir minggu.
+    </div>
+  </div>
+
+  <!-- Checklist Bandar -->
+  <div class="card">
+    <div class="card-title">✅ Checklist Trigger — Status Terkini</div>
+    <div class="chk-item">
+      <div class="chk-icon">❌</div>
+      <div class="chk-label"><strong>XL konsisten net buy semua TF</strong></div>
+      <div class="chk-status" style="color:var(--red2)">GUGUR — flip sell</div>
+    </div>
+    <div class="chk-item">
+      <div class="chk-icon">⚠️</div>
+      <div class="chk-label"><strong>YP konfirmasi bandar baru</strong> (masuk 3.7B di 940)</div>
+      <div class="chk-status" style="color:var(--yellow)">BELUM — perlu 2–3 hari</div>
+    </div>
+    <div class="chk-item">
+      <div class="chk-icon">✅</div>
+      <div class="chk-label"><strong>Stochastic oversold</strong> (weekly 14.74 + monthly 12.83)</div>
+      <div class="chk-status" style="color:var(--green)">TERPENUHI</div>
+    </div>
+    <div class="chk-item">
+      <div class="chk-icon">✅</div>
+      <div class="chk-label"><strong>Volume spike &gt; 50K lot</strong> — 353K lot hari ini</div>
+      <div class="chk-status" style="color:var(--green)">TERPENUHI</div>
+    </div>
+    <div class="chk-item">
+      <div class="chk-icon">✅</div>
+      <div class="chk-label"><strong>MHP ramp-up confirmed</strong> — BSE aktif produksi</div>
+      <div class="chk-status" style="color:var(--green)">TERPENUHI</div>
+    </div>
+    <div class="chk-item">
+      <div class="chk-icon">❌</div>
+      <div class="chk-label"><strong>Foreign flow jadi positif</strong></div>
+      <div class="chk-status" style="color:var(--red2)">-1.06B (mengecil)</div>
+    </div>
+    <div class="chk-item">
+      <div class="chk-icon">❌</div>
+      <div class="chk-label"><strong>RKAB coal resmi keluar</strong></div>
+      <div class="chk-status" style="color:var(--muted2)">Menunggu</div>
+    </div>
+    <div style="background:var(--bg3); border-radius:6px; padding:12px; margin-top:10px; font-family:'Space Mono',monospace; font-size:11px;">
+      <span style="color:var(--muted2)">Status: </span><strong style="color:var(--yellow)">4/7 trigger terpenuhi</strong>
+      <span style="color:var(--muted2)"> — turun dari 5/9 sebelumnya. Threshold entry turun.</span>
+    </div>
+  </div>
+
+</div><!-- /tab-bandar -->
+
+<!-- ════════════════════════════════════════════ TAB 4: SCORECARD -->
+<div id="tab-scorecard" class="panel">
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">🎯 Scorecard — Updated 8 Mei 2026</div>
+      <div id="scorecardRows"></div>
+      <div class="score-total-row" style="margin-top:12px">
+        <div>
+          <div class="score-total-label">TOTAL SKOR</div>
+          <div style="font-family:'Space Mono',monospace; font-size:11px; color:var(--muted2)">Threshold entry = 18/24 (75%)</div>
+        </div>
+        <div style="text-align:right">
+          <div class="score-total-val">15/24</div>
+          <div style="font-family:'Space Mono',monospace; font-size:11px; color:var(--orange)">62.5% — DI BAWAH THRESHOLD</div>
+        </div>
+      </div>
+      <div class="infobox" style="margin-top:12px; border-color:#3d1a1a">
+        Sebelumnya 16.5/24 (69%). <strong>Turun ke 15/24 (62.5%)</strong> karena XL flip mengubah Bandarmology score dari 3.5 menjadi 2.5 dan Price-Volume dari 2 menjadi 1.5.
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📉 Skor Visual</div>
+      <div class="chart-wrap">
+        <canvas id="radarChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Risks -->
+  <div class="card">
+    <div class="card-title">⚠️ Risiko — Updated (7 Risiko)</div>
+
+    <div class="risk-item" style="border-color:var(--red2)">
+      <div class="risk-title" style="color:var(--red2)">🔴 #1 — XL FLIP (BARU! KRITIS)</div>
+      <div class="risk-desc">Broker XL yang menjadi pilar akumulasi dump Rp 3.2M dalam satu hari. Ini menghapus trigger entry terpenting. Jika ini distribusi beneran (bukan pass-off), downside ke 850–900 terbuka lebar.</div>
+    </div>
+    <div class="risk-item" style="border-color:var(--red)">
+      <div class="risk-title" style="color:var(--red)">🔴 #2 — STOP LOSS 900 TINGGAL 10 POIN</div>
+      <div class="risk-desc">Dari harga saat ini 910, jarak ke SL hanya 10 poin (1.1%). Volatilitas satu hari bisa menyentuh SL di open Senin. Pastikan sizing ketat.</div>
+    </div>
+    <div class="risk-item" style="border-color:var(--orange)">
+      <div class="risk-title" style="color:var(--orange)">🟠 #3 — Finance Cost +82% YoY</div>
+      <div class="risk-desc">USD 20.4M beban bunga + utang NCI USD 763.8M terus menggerus laba ke pemilik induk. Buyback pause = kas diprioritaskan bayar bunga.</div>
+    </div>
+    <div class="risk-item" style="border-color:var(--orange)">
+      <div class="risk-title" style="color:var(--orange)">🟠 #4 — Bea Keluar + Windfall Tax Nikel (BARU)</div>
+      <div class="risk-desc">PP 19/2025 royalti 15% sudah aktif. Potensi bea keluar tambahan atau windfall levy jika LME spike. 96% revenue dari nikel = sangat sensitif ke kebijakan regulasi mendadak. Bisa gerus margin 5–15%.</div>
+    </div>
+    <div class="risk-item" style="border-color:var(--yellow)">
+      <div class="risk-title" style="color:var(--yellow)">🟡 #5 — RKAB Uncertainty</div>
+      <div class="risk-desc">Jika moratorium RKAB coal diperpanjang, revenue coal tetap nihil. Stok sudah di stockpile tapi belum bisa diakui sebagai pendapatan.</div>
+    </div>
+    <div class="risk-item" style="border-color:var(--yellow)">
+      <div class="risk-title" style="color:var(--yellow)">🟡 #6 — MHP Margin Belum Normal</div>
+      <div class="risk-desc">BSE baru 50% kapasitas di 1Q26. Sulfur + fuel cost bisa tekan margin di 2Q26. Perlu pantau cost per ton MHP.</div>
+    </div>
+    <div class="risk-item" style="border-color:var(--muted)">
+      <div class="risk-title" style="color:var(--muted2)">⚪ #7 — Nickel LME Volatile</div>
+      <div class="risk-desc">96% revenue dari nikel. Sangat sensitif terhadap fluktuasi harga LME. Downside jika China demand turun atau surplus global berlanjut.</div>
+    </div>
+  </div>
+
+</div><!-- /tab-scorecard -->
+
+<!-- ════════════════════════════════════════════ TAB 5: TRADE PLAN -->
+<div id="tab-trade" class="panel">
+
+  <!-- Signal History -->
+  <div class="card">
+    <div class="card-title">⏱️ Signal History — Remora Method</div>
+    <div class="sig-item">
+      <div class="sig-dot" style="background:var(--muted)"></div>
+      <div class="sig-body">
+        <div class="sig-period">2022 — ATH</div>
+        <div class="sig-action" style="color:var(--red2)">AVOID</div>
+        <div class="sig-price">Rp 2.400 → distribusi dimulai</div>
+        <div class="sig-reason">Stochastic extreme overbought. Distribusi jangka panjang dimulai.</div>
+      </div>
+    </div>
+    <div class="sig-item">
+      <div class="sig-dot" style="background:var(--muted)"></div>
+      <div class="sig-body">
+        <div class="sig-period">2024 — 52W Low</div>
+        <div class="sig-action" style="color:var(--yellow)">WATCH</div>
+        <div class="sig-price">Rp 760 — dasar historis</div>
+        <div class="sig-reason">Wyckoff Phase B → C. Volume aneh mulai muncul. Belum cukup konfirmasi bandar.</div>
+        <div class="sig-result" style="color:var(--muted2)">Tidak dieksekusi</div>
+      </div>
+    </div>
+    <div class="sig-item">
+      <div class="sig-dot" style="background:var(--green)"></div>
+      <div class="sig-body">
+        <div class="sig-period">7–8 Mei 2026 — Entry Window</div>
+        <div class="sig-action" style="color:var(--green)">ENTRY PARTIAL</div>
+        <div class="sig-price">Rp 975–985 → 3% porto</div>
+        <div class="sig-reason">5/9 trigger terpenuhi. Stochastic weekly+monthly oversold. ZP masuk, XL masih beli (waktu itu).</div>
+        <div class="sig-result" style="color:var(--yellow)">LIVE — sedang jalan</div>
+      </div>
+    </div>
+    <div class="sig-item" style="margin-bottom:0">
+      <div class="sig-dot" style="background:var(--red2)"></div>
+      <div class="sig-body">
+        <div class="sig-period">8 Mei 2026 — 🚨 ALERT PERUBAHAN</div>
+        <div class="sig-action" style="color:var(--red)">DEFEND SL</div>
+        <div class="sig-price">Harga 910 — SL 900 = 10 poin</div>
+        <div class="sig-reason">XL flip sell 3.2B. Volume abnormal 353K lot. Kondisi berubah material.</div>
+        <div class="sig-result" style="color:var(--red2)">SL 900 adalah garis keras</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Trade Plan Table -->
+  <div class="card">
+    <div class="card-title">💼 Trade Plan Aktif — Updated</div>
+
+    <div class="tp-row">
+      <div class="tp-tag" style="background:#001a0d; color:var(--green)">ENTRY 1</div>
+      <div class="tp-content">
+        <div class="tp-price">Rp 975–985 <span style="font-size:11px; color:var(--muted2)">— sizing: 3% porto</span></div>
+        <div class="tp-note">✅ Sudah dieksekusi (jika mengikuti plan). Sekarang di bawah entry, floating loss -7% dari 980.</div>
+      </div>
+    </div>
+    <div class="tp-row">
+      <div class="tp-tag" style="background:#001020; color:var(--cyan)">ENTRY 2</div>
+      <div class="tp-content">
+        <div class="tp-price">Rp 880–910 <span style="font-size:11px; color:var(--muted2)">— sizing: +2% porto (jika YP konfirmasi)</span></div>
+        <div class="tp-note">⚠️ Hanya masuk jika YP net buy konsisten 2 hari + harga stabil di atas 880. Jangan average down membabi buta.</div>
+      </div>
+    </div>
+    <div class="tp-row">
+      <div class="tp-tag" style="background:#1a0000; color:var(--red2)">STOP LOSS</div>
+      <div class="tp-content">
+        <div class="tp-price">Rp 900 <span style="font-size:11px; color:var(--red2)">— HARD CUT, tidak bisa dinego</span></div>
+        <div class="tp-note">🚨 Dari harga 910 sekarang, jarak tinggal 10 poin. Jika Senin open di bawah 900 = cut di open. Tidak ada wait and see.</div>
+      </div>
+    </div>
+    <div class="tp-row">
+      <div class="tp-tag" style="background:#1a1000; color:var(--yellow)">TARGET 1</div>
+      <div class="tp-content">
+        <div class="tp-price">Rp 1.050–1.100 <span style="font-size:11px; color:var(--muted2)">— partial profit 30%</span></div>
+        <div class="tp-note">Resistance pertama. Jika YP terbukti bandar baru dan harga recovery.</div>
+      </div>
+    </div>
+    <div class="tp-row">
+      <div class="tp-tag" style="background:#0a1020; color:var(--purple)">TARGET 2</div>
+      <div class="tp-content">
+        <div class="tp-price">Rp 1.200–1.250 <span style="font-size:11px; color:var(--muted2)">— partial profit 40%</span></div>
+        <div class="tp-note">Area distribusi YTD. Butuh konfirmasi RKAB coal + MHP 80%.</div>
+      </div>
+    </div>
+    <div class="tp-row">
+      <div class="tp-tag" style="background:#0a0020; color:var(--purple)">RUNNER</div>
+      <div class="tp-content">
+        <div class="tp-price">Rp 1.400+ <span style="font-size:11px; color:var(--muted2)">— sisa 30%</span></div>
+        <div class="tp-note">RKAB + MHP 80% confirmed + bandar YP konsisten. Skenario optimis.</div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- Senin Decision Tree -->
+    <div class="card-title">🗓️ Decision Tree — Senin 11 Mei 2026</div>
+    <table class="tbl" style="margin-top:8px">
+      <thead><tr><th>Kondisi Open Senin</th><th>Volume</th><th>Aksi</th></tr></thead>
+      <tbody>
+        <tr style="background:#1a0808">
+          <td style="color:var(--red)"><strong>Open di bawah 900</strong></td>
+          <td>Apapun</td>
+          <td style="color:var(--red)"><strong>CUT LOSS di open — tidak tunda</strong></td>
+        </tr>
+        <tr style="background:#1a0d00">
+          <td style="color:var(--orange)">Open 900–920, lanjut turun</td>
+          <td>Besar</td>
+          <td style="color:var(--orange)">Cut loss — jangan tunggu</td>
+        </tr>
+        <tr>
+          <td style="color:var(--yellow)">Open 900–920, stabil</td>
+          <td>Sepi</td>
+          <td style="color:var(--yellow)">Hold — pantau YP & XL</td>
+        </tr>
+        <tr>
+          <td style="color:var(--cyan)">Open recovery 930–950</td>
+          <td>Sedang</td>
+          <td style="color:var(--cyan)">Hold — lihat sesi penuh</td>
+        </tr>
+        <tr style="background:#001a0d">
+          <td style="color:var(--green)">Open 950+, XL/YP net buy</td>
+          <td>Normal</td>
+          <td style="color:var(--green)">Hold kuat — thesis recovery</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Risk Reward -->
+  <div class="card">
+    <div class="card-title">⚖️ Risk/Reward — Updated</div>
+    <div class="chart-wrap">
+      <canvas id="rrChart"></canvas>
+    </div>
+    <div class="grid-3" style="margin-top:12px">
+      <div class="kpi">
+        <div class="kpi-label">MAX RISK (per unit)</div>
+        <div class="kpi-value" style="color:var(--red2)">80</div>
+        <div class="kpi-sub">poin (980 → 900)</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">TARGET 1 REWARD</div>
+        <div class="kpi-value" style="color:var(--green)">120</div>
+        <div class="kpi-sub">poin ke 1.100</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">R/R RATIO</div>
+        <div class="kpi-value" style="color:var(--yellow)">1.5:1</div>
+        <div class="kpi-sub">menurun dari 3:1</div>
+      </div>
+    </div>
+    <div class="infobox" style="margin-top:12px; border-color:#3d2200">
+      ⚠️ <strong>R/R ratio menurun dari 3:1 menjadi 1.5:1</strong> karena harga sudah 70 poin di bawah entry. Ini adalah trade yang sudah berjalan — posisi sudah ada, bukan pertimbangan baru entry. Pastikan sizing tidak melebihi 5% portofolio.
+    </div>
+  </div>
+
+</div><!-- /tab-trade -->
+
+</div><!-- /main -->
+
+<div class="footer">
+  HRUM Backtest v3 — Metode Kang Yayan &nbsp;|&nbsp; Update: 8 Mei 2026<br>
+  Data: Stockbit, RTI, LK Resmi 1Q26, Broker Flow Harian<br>
+  Bukan rekomendasi beli/jual. Semua keputusan adalah tanggung jawab investor masing-masing.
+</div>
+
+<script>
+// ── HELPERS ──────────────────────────────────────────────────────────────────
+const cf = (v) => ({ color: v });
+function showTab(id) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+  event.target.classList.add('active');
+}
+
+const FONT_MONO = "'Space Mono', monospace";
+Chart.defaults.color = '#4a6080';
+Chart.defaults.font.family = FONT_MONO;
+Chart.defaults.font.size = 10;
+
+const GRID = { color: 'rgba(26,37,53,0.8)', lineWidth: 1 };
+
+// ── PRICE CHART ───────────────────────────────────────────────────────────────
+const priceLabels = ['ATH\n2022','2022\nQ3','2023\nQ1','2023\nQ3','2024\nQ1','52wL\n2024','Spring\n2024','2024\nQ4','1Q25','2Q25','3Q25','4Q25','1Q26','8 Mei'];
+const priceData   = [2400,1200,700,590,530,760,800,880,960,1005,1050,1100,990,910];
+
+new Chart(document.getElementById('priceChart'), {
+  type: 'line',
+  data: {
+    labels: priceLabels,
+    datasets: [{
+      data: priceData,
+      borderColor: ctx => {
+        const g = ctx.chart.ctx.createLinearGradient(0,0,ctx.chart.width,0);
+        g.addColorStop(0,'#ef4444'); g.addColorStop(0.5,'#22d3ee'); g.addColorStop(1,'#f87171');
+        return g;
+      },
+      borderWidth: 2,
+      pointBackgroundColor: priceData.map((v,i) => i===13 ? '#ef4444' : i===5 ? '#fbbf24' : '#38bdf8'),
+      pointRadius: priceData.map((v,i) => i===13 ? 8 : i===5 ? 6 : 3),
+      fill: true,
+      backgroundColor: 'rgba(56,189,248,0.04)',
+      tension: 0.3
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: { callbacks: { label: ctx => `Rp ${ctx.parsed.y.toLocaleString()}` } }
+    },
+    scales: {
+      x: { grid: GRID, ticks: { maxRotation: 0, font: { size: 9 } } },
+      y: { grid: GRID, ticks: { callback: v => `${(v/1000).toFixed(1)}K` } }
+    }
+  }
+});
+
+// ── FUNDAMENTAL CHART ─────────────────────────────────────────────────────────
+const fLabels = ['1Q24','2Q24','3Q24','4Q24','1Q25','2Q25','3Q25','4Q25','1Q26'];
+new Chart(document.getElementById('fundChart'), {
+  type: 'bar',
+  data: {
+    labels: fLabels,
+    datasets: [
+      { label: 'Revenue (USD M)', data: [44,46,53,73,298,320,340,360,346], backgroundColor: 'rgba(56,189,248,0.25)', borderColor: '#38bdf8', borderWidth: 1, yAxisID: 'y' },
+      { label: 'Net Profit (USD M)', data: [3.5,5.3,8.9,16.8,7.2,15,20,25,27.1], type: 'line', borderColor: '#34d399', borderWidth: 2, pointRadius: 4, fill: false, yAxisID: 'y2' }
+    ]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: true, position: 'top', labels: { color: '#7a96b5', boxWidth: 12, font: { size: 10 } } } },
+    scales: {
+      x: { grid: GRID },
+      y:  { grid: GRID, ticks: { callback: v => v+'M' }, title: { display: true, text: 'Revenue', color: '#38bdf8', font: { size: 10 } } },
+      y2: { position: 'right', grid: { display: false }, ticks: { callback: v => v+'M' }, title: { display: true, text: 'Net Profit', color: '#34d399', font: { size: 10 } } }
+    }
+  }
+});
+
+// ── SEGMENT CHART ─────────────────────────────────────────────────────────────
+new Chart(document.getElementById('segmentChart'), {
+  type: 'bar',
+  data: {
+    labels: ['1Q25','1Q26'],
+    datasets: [
+      { label: 'Nickel Smelter', data: [174.1, 334.1], backgroundColor: '#22d3ee55', borderColor: '#22d3ee', borderWidth: 2 },
+      { label: 'Batubara', data: [122.7, 6.2], backgroundColor: '#f8717155', borderColor: '#f87171', borderWidth: 2 },
+      { label: 'Sewa & Jasa', data: [2.1, 5.5], backgroundColor: '#fbbf2455', borderColor: '#fbbf24', borderWidth: 2 }
+    ]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: true, position: 'top', labels: { color: '#7a96b5', boxWidth: 12, font: { size: 10 } } } },
+    scales: {
+      x: { grid: GRID, stacked: false },
+      y: { grid: GRID, ticks: { callback: v => v+'M' } }
+    }
+  }
+});
+
+// ── PROJECTION CHART ──────────────────────────────────────────────────────────
+new Chart(document.getElementById('projChart'), {
+  type: 'bar',
+  data: {
+    labels: ['1Q26\n(Aktual)', '2Q26\nProyeksi', '3Q26\nProyeksi', '4Q26\nProyeksi'],
+    datasets: [
+      { label: 'Konservatif (USD M)', data: [27.1, 45, 60, 65], backgroundColor: 'rgba(34,211,153,0.3)', borderColor: '#34d399', borderWidth: 2 },
+      { label: 'Optimis (USD M)', data: [27.1, 65, 85, 90], backgroundColor: 'rgba(139,92,246,0.3)', borderColor: '#a78bfa', borderWidth: 2 }
+    ]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: true, position: 'top', labels: { color: '#7a96b5', boxWidth: 12, font: { size: 10 } } },
+      tooltip: { callbacks: { label: ctx => `USD ${ctx.parsed.y}M` } }
+    },
+    scales: { x: { grid: GRID }, y: { grid: GRID, ticks: { callback: v => v+'M' } } }
+  }
+});
+
+// ── BROKER FLOW INTRADAY 8 MEI ────────────────────────────────────────────────
+new Chart(document.getElementById('brokerFlowChart'), {
+  type: 'line',
+  data: {
+    labels: ['09:00','10:00','11:00','12:00','13:00','14:00','15:09','15:30','16:14'],
+    datasets: [
+      { label: 'XL', data: [200,150,100,100,80,60,-500,-2000,-3200], borderColor: '#ef4444', borderWidth: 2, fill: false, tension: 0.3 },
+      { label: 'YP', data: [0,100,200,400,800,1200,2000,2800,3700], borderColor: '#8b5cf6', borderWidth: 2, fill: false, tension: 0.3 },
+      { label: 'YB', data: [0,50,100,300,500,800,1200,1600,2000], borderColor: '#f59e0b', borderWidth: 2, fill: false, tension: 0.3 },
+      { label: 'SQ', data: [0,0,-50,-100,-200,-400,-800,-1200,-1600], borderColor: '#fb923c', borderWidth: 2, fill: false, tension: 0.3 }
+    ]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: {
+      legend: { display: true, position: 'top', labels: { color: '#7a96b5', boxWidth: 12, font: { size: 10 } } },
+      tooltip: { callbacks: { label: ctx => `${ctx.dataset.label}: ${(ctx.parsed.y/1000).toFixed(1)}B` } },
+      annotation: {}
+    },
+    scales: {
+      x: { grid: GRID },
+      y: { grid: GRID, ticks: { callback: v => (v/1000).toFixed(0)+'B' } }
+    }
+  }
+});
+
+// ── BROKER WEEKLY CHART ───────────────────────────────────────────────────────
+new Chart(document.getElementById('brokerWeekChart'), {
+  type: 'line',
+  data: {
+    labels: ['4 Mei','5 Mei','6 Mei','7 Mei','8 Mei'],
+    datasets: [
+      { label: 'XL', data: [178,-173,-218,-716,-3938], borderColor: '#ef4444', borderWidth: 2, fill: false, tension: 0.3 },
+      { label: 'YP (kumulatif)', data: [200,500,900,1600,4500], borderColor: '#8b5cf6', borderWidth: 2, fill: false, tension: 0.3 },
+      { label: 'PD', data: [100,400,700,900,1100], borderColor: '#f97316', borderWidth: 2, fill: false, tension: 0.3 },
+      { label: 'SQ/FS', data: [0,-100,-300,-700,-1600], borderColor: '#fbbf24', borderWidth: 2, fill: false, tension: 0.3 }
+    ]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: true, position: 'top', labels: { color: '#7a96b5', boxWidth: 12, font: { size: 10 } } } },
+    scales: {
+      x: { grid: GRID },
+      y: { grid: GRID, ticks: { callback: v => (v/1000).toFixed(1)+'B' } }
+    }
+  }
+});
+
+// ── SCORECARD BARS ────────────────────────────────────────────────────────────
+const scores = [
+  { name: 'Fundamental', s: 4.5, max: 5, c: '#34d399' },
+  { name: 'Price-Volume', s: 1.5, max: 4, c: '#ef4444', note: '↓ -0.5 (volume dump)' },
+  { name: 'Bandarmology', s: 2.5, max: 5, c: '#f87171', note: '↓ -1 (XL flip)' },
+  { name: 'Trendline/SR', s: 2,   max: 4, c: '#8b5cf6' },
+  { name: 'Bid-Offer',    s: 2,   max: 3, c: '#06b6d4' },
+  { name: 'Wyckoff',      s: 2.5, max: 3, c: '#fbbf24' },
+];
+const container = document.getElementById('scorecardRows');
+scores.forEach(sc => {
+  const pct = (sc.s / sc.max * 100).toFixed(0);
+  container.innerHTML += `
+    <div class="score-row">
+      <div class="score-name">${sc.name}${sc.note ? `<br><span style="font-size:9px;color:var(--red2)">${sc.note}</span>` : ''}</div>
+      <div class="score-bar-wrap"><div class="score-bar" style="width:${pct}%;background:${sc.c}"></div></div>
+      <div class="score-num">${sc.s}/${sc.max}</div>
+    </div>`;
+});
+
+// ── RADAR CHART ───────────────────────────────────────────────────────────────
+new Chart(document.getElementById('radarChart'), {
+  type: 'radar',
+  data: {
+    labels: ['Fundamental\n/5', 'Price-Vol\n/4', 'Bandar\n/5', 'Trendline\n/4', 'Bid-Offer\n/3', 'Wyckoff\n/3'],
+    datasets: [
+      {
+        label: 'Sebelum (16.5)', 
+        data: [4.5, 2, 3.5, 2, 2, 2.5],
+        borderColor: '#38bdf888', borderWidth: 1,
+        backgroundColor: 'rgba(56,189,248,0.06)',
+        pointRadius: 2, pointBorderColor: '#38bdf8'
+      },
+      {
+        label: 'Update 8 Mei (15)',
+        data: [4.5, 1.5, 2.5, 2, 2, 2.5],
+        borderColor: '#f87171',  borderWidth: 2,
+        backgroundColor: 'rgba(248,113,113,0.1)',
+        pointRadius: 3, pointBackgroundColor: '#f87171'
+      }
+    ]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: true, position: 'top', labels: { color: '#7a96b5', boxWidth: 12, font: { size: 10 } } } },
+    scales: { r: {
+      min: 0, max: 5, grid: { color: '#1a2535' }, angleLines: { color: '#1a2535' },
+      ticks: { stepSize: 1, display: false }, pointLabels: { font: { size: 10 }, color: '#7a96b5' }
+    }}
+  }
+});
+
+// ── R/R CHART ────────────────────────────────────────────────────────────────
+new Chart(document.getElementById('rrChart'), {
+  type: 'bar',
+  data: {
+    labels: ['Entry (980)', 'SL (900)', 'Target 1 (1.100)', 'Target 2 (1.250)', 'Runner (1.400)'],
+    datasets: [{
+      data: [980, 900, 1100, 1250, 1400],
+      backgroundColor: ['#38bdf820','#ef444440','#34d39940','#8b5cf640','#a78bfa40'],
+      borderColor:     ['#38bdf8',  '#ef4444',  '#34d399',  '#8b5cf6',  '#a78bfa'],
+      borderWidth: 2
+    }]
+  },
+  options: {
+    indexAxis: 'y',
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => `Rp ${ctx.parsed.x}` } } },
+    scales: {
+      x: { grid: GRID, ticks: { callback: v => `Rp ${v}` }, min: 800, max: 1500 },
+      y: { grid: { display: false } }
+    }
+  }
+});
+</script>
+</body>
+</html>
