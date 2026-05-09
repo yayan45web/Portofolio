@@ -1,0 +1,1314 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>HRUM — Backtest Metode Kang Yayan</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --bg:#020810;
+  --bg2:#060f1e;
+  --card:#08111f;
+  --card2:#0b1628;
+  --border:#0e2040;
+  --border2:#162d52;
+  --accent:#00d4ff;
+  --accent2:#0099cc;
+  --gold:#f5a623;
+  --green:#00e676;
+  --green2:#00b857;
+  --red:#ff3b5c;
+  --red2:#cc2244;
+  --purple:#b388ff;
+  --orange:#ff8a00;
+  --cyan:#00e5ff;
+  --text:#c8d8f0;
+  --text2:#7a99c0;
+  --text3:#3d5a7a;
+  --mono:'Space Mono',monospace;
+  --sans:'DM Sans',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:100vh;overflow-x:hidden;}
+
+/* SCANLINE overlay */
+body::before{
+  content:'';position:fixed;top:0;left:0;right:0;bottom:0;
+  background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,212,255,.012) 2px,rgba(0,212,255,.012) 4px);
+  pointer-events:none;z-index:1000;
+}
+
+/* ── HEADER ── */
+.header{
+  background:linear-gradient(180deg,#030d1c 0%,#020810 100%);
+  border-bottom:1px solid var(--border2);
+  padding:14px 20px 10px;
+  position:sticky;top:0;z-index:200;
+}
+.header-top{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;}
+.ticker-block{display:flex;align-items:baseline;gap:10px;}
+.ticker-name{font-family:var(--mono);font-size:28px;font-weight:700;color:var(--accent);letter-spacing:3px;text-shadow:0 0 20px rgba(0,212,255,.4);}
+.ticker-price{font-family:var(--mono);font-size:20px;font-weight:700;color:var(--red);}
+.ticker-chg{font-size:11px;font-weight:700;color:var(--red);background:rgba(255,59,92,.12);border:1px solid rgba(255,59,92,.3);border-radius:4px;padding:2px 7px;}
+.ticker-sub{font-size:9px;color:var(--text3);font-family:var(--mono);letter-spacing:2px;margin-top:3px;}
+.header-pills{display:flex;gap:6px;flex-wrap:wrap;}
+.pill{background:var(--card);border:1px solid var(--border2);border-radius:6px;padding:5px 10px;text-align:center;}
+.pill-l{font-size:7px;color:var(--text3);letter-spacing:2px;font-family:var(--mono);}
+.pill-v{font-size:11px;font-weight:700;color:var(--accent);font-family:var(--mono);}
+
+/* ── TAB NAV ── */
+.tab-nav{display:flex;gap:4px;padding:10px 20px 0;overflow-x:auto;border-bottom:1px solid var(--border);}
+.tab-btn{
+  padding:8px 16px;border:none;background:transparent;
+  color:var(--text3);font-size:11px;font-weight:600;cursor:pointer;
+  border-bottom:2px solid transparent;white-space:nowrap;
+  font-family:var(--mono);letter-spacing:1px;transition:all .25s;
+}
+.tab-btn.active{color:var(--accent);border-bottom-color:var(--accent);}
+.tab-btn:hover{color:var(--text);}
+
+/* ── CONTENT ── */
+.content{padding:20px;max-width:520px;margin:0 auto;}
+.tab-panel{display:none;}
+.tab-panel.active{display:block;}
+
+/* ── SECTION DIVIDER ── */
+.divider{display:flex;align-items:center;gap:10px;margin:20px 0 14px;}
+.div-line{flex:1;height:1px;background:linear-gradient(90deg,var(--border2),transparent);}
+.div-text{font-size:8px;color:var(--text3);letter-spacing:3px;font-family:var(--mono);white-space:nowrap;}
+
+/* ── CARDS ── */
+.card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px 16px;margin-bottom:12px;}
+.card-accent{border-top:2px solid var(--accent);}
+.card-gold{border-top:2px solid var(--gold);}
+.card-green{border-top:2px solid var(--green);}
+.card-red{border-top:2px solid var(--red);}
+.card-glow{box-shadow:0 0 20px rgba(0,212,255,.06);}
+
+/* ── SCORE TOTAL ── */
+.score-hero{
+  background:linear-gradient(135deg,var(--card),var(--card2));
+  border:1px solid var(--orange);
+  border-radius:12px;padding:18px;text-align:center;margin-bottom:16px;
+  box-shadow:0 0 30px rgba(255,138,0,.08);
+}
+.score-big{font-family:var(--mono);font-size:52px;font-weight:700;color:var(--orange);line-height:1;}
+.score-denom{font-size:22px;color:var(--text3);}
+.score-pct{font-size:13px;font-weight:700;color:var(--orange);margin:6px 0 2px;}
+.score-status{font-size:10px;color:var(--red);font-family:var(--mono);letter-spacing:1px;}
+.score-bar-bg{background:var(--border);border-radius:4px;height:6px;margin:10px 0 4px;}
+.score-bar-fill{height:100%;border-radius:4px;background:var(--orange);}
+.score-threshold{font-size:8px;color:var(--text3);font-family:var(--mono);}
+
+/* ── SCORECARD BAR ── */
+.sbar{margin-bottom:14px;}
+.sbar-head{display:flex;justify-content:space-between;margin-bottom:5px;}
+.sbar-label{font-size:11px;font-weight:600;color:var(--text);}
+.sbar-val{font-size:11px;font-weight:700;font-family:var(--mono);}
+.sbar-bg{background:var(--border);border-radius:3px;height:5px;margin-bottom:5px;}
+.sbar-fill{height:100%;border-radius:3px;transition:width .6s ease;}
+.sbar-detail{font-size:9px;color:var(--text3);line-height:1.6;}
+
+/* ── SIGNAL TABLE ── */
+.signal-item{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:8px;padding:10px 12px;margin-bottom:8px;
+  cursor:pointer;transition:border-color .2s;
+}
+.signal-item:hover{border-color:var(--border2);}
+.signal-item.fail{background:#100808;border-color:#2a1010;}
+.signal-row{display:flex;justify-content:space-between;align-items:center;}
+.signal-left{display:flex;gap:8px;align-items:center;}
+.sig-badge{
+  font-size:9px;font-weight:700;font-family:var(--mono);
+  padding:2px 8px;border-radius:4px;border:1px solid;
+}
+.sig-period{font-size:10px;font-weight:600;color:var(--text2);font-family:var(--mono);}
+.sig-price{font-size:10px;color:var(--text3);font-family:var(--mono);}
+.sig-result{font-size:13px;font-weight:800;font-family:var(--mono);}
+.sig-detail{font-size:9px;color:var(--text3);line-height:1.6;margin-top:8px;padding-top:8px;border-top:1px solid var(--border);display:none;}
+.signal-item.open .sig-detail{display:block;}
+.chevron{font-size:9px;color:var(--text3);transition:transform .2s;}
+.signal-item.open .chevron{transform:rotate(180deg);}
+
+/* ── SIGNAL SUMMARY GRID ── */
+.sum-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px;}
+.sum-cell{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:10px;text-align:center;}
+.sum-num{font-family:var(--mono);font-size:22px;font-weight:700;}
+.sum-lbl{font-size:8px;color:var(--text3);margin-top:3px;letter-spacing:1px;}
+
+/* ── STATS GRID ── */
+.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;}
+.stat-cell{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:8px;padding:10px 12px;
+  border-left:3px solid;
+}
+.stat-label{font-size:8px;color:var(--text3);font-family:var(--mono);letter-spacing:1px;margin-bottom:4px;}
+.stat-value{font-size:14px;font-weight:700;font-family:var(--mono);}
+.stat-sub{font-size:8px;color:var(--text3);margin-top:2px;}
+
+/* ── CHART TOGGLE ── */
+.chart-toggle{
+  padding:5px 12px;border-radius:5px;border:1px solid var(--border2);
+  background:transparent;color:var(--text3);font-size:9px;font-weight:700;
+  cursor:pointer;font-family:var(--mono);letter-spacing:1px;transition:all .2s;
+}
+.chart-toggle.active{background:rgba(0,212,255,.15);border-color:var(--accent);color:var(--accent);}
+
+/* ── PRICE CHART ── */
+.chart-wrap{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:12px;}
+.chart-canvas{width:100%;height:160px;display:block;}
+.chart-legend{display:flex;gap:10px;flex-wrap:wrap;margin-top:8px;}
+.legend-item{display:flex;align-items:center;gap:4px;font-size:8px;color:var(--text3);}
+.legend-dot{width:8px;height:8px;border-radius:50%;}
+
+/* ── PHASE TRACKER ── */
+.phase-track{display:flex;gap:6px;align-items:center;justify-content:center;margin-bottom:12px;flex-wrap:wrap;}
+.phase-node{
+  display:flex;flex-direction:column;align-items:center;gap:3px;
+}
+.phase-circle{
+  width:28px;height:28px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--mono);font-size:10px;font-weight:700;
+  background:transparent;border:2px solid var(--border2);color:var(--text3);
+  transition:all .3s;
+}
+.phase-circle.active{color:#000;box-shadow:0 0 16px currentColor;}
+.phase-lbl{font-size:7px;color:var(--text3);text-align:center;max-width:40px;letter-spacing:.5px;}
+.phase-arrow{font-size:10px;color:var(--border2);margin-bottom:14px;}
+
+/* ── WYCKOFF NOTE ── */
+.wyckoff-note{
+  background:rgba(245,166,35,.06);border:1px solid rgba(245,166,35,.2);
+  border-left:3px solid var(--gold);border-radius:8px;
+  padding:10px 12px;
+}
+.wyck-title{font-size:10px;color:var(--gold);font-weight:700;margin-bottom:3px;}
+.wyck-desc{font-size:9.5px;color:var(--text3);line-height:1.7;}
+
+/* ── BROKER FLOW ── */
+.broker-row{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
+.broker-name{font-family:var(--mono);font-weight:700;font-size:11px;min-width:24px;}
+.broker-side{
+  font-size:8px;font-weight:700;font-family:var(--mono);
+  padding:2px 6px;border-radius:3px;min-width:32px;text-align:center;
+}
+.broker-bar-wrap{
+  flex:1;background:var(--border);border-radius:3px;height:10px;
+  position:relative;overflow:hidden;
+}
+.broker-bar-center{position:absolute;left:50%;top:0;width:1px;height:100%;background:var(--border2);}
+.broker-bar-fill{position:absolute;top:0;height:100%;border-radius:3px;}
+.broker-net{font-family:var(--mono);font-size:10px;font-weight:700;min-width:38px;text-align:right;}
+.broker-note{font-size:8px;color:var(--text3);flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+
+/* ── SEGMENT CHART ── */
+.seg-bar-row{margin-bottom:10px;}
+.seg-bar-head{display:flex;justify-content:space-between;margin-bottom:4px;}
+.seg-label{font-size:10px;color:var(--text);}
+.seg-chg{font-size:10px;font-weight:700;font-family:var(--mono);}
+.seg-bar-wrap{display:flex;gap:6px;align-items:center;}
+.seg-old{font-size:8px;color:var(--text3);min-width:65px;text-align:right;font-family:var(--mono);}
+.seg-new{font-size:8px;font-weight:700;min-width:65px;font-family:var(--mono);}
+.seg-track{flex:1;background:var(--border);border-radius:2px;height:7px;}
+.seg-fill{height:100%;border-radius:2px;}
+
+/* ── SMELTER CARD ── */
+.smelter-card{
+  background:var(--card);border:1px solid var(--border);
+  border-left:4px solid;border-radius:8px;
+  padding:10px 14px;margin-bottom:8px;
+  display:flex;justify-content:space-between;align-items:center;
+}
+.smelter-l{}
+.smelter-code{font-family:var(--mono);font-size:13px;font-weight:700;}
+.smelter-name{font-size:10px;color:var(--text2);}
+.smelter-own{font-size:8px;color:var(--text3);}
+.smelter-r{text-align:right;}
+.smelter-asset{font-size:11px;font-weight:700;font-family:var(--mono);}
+.smelter-loc{font-size:8px;color:var(--text3);}
+
+/* ── BUYBACK ITEMS ── */
+.bb-item{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:9px 12px;background:var(--card);border:1px solid var(--border);
+  border-left:3px solid;border-radius:6px;margin-bottom:6px;
+}
+.bb-label{font-size:9px;color:var(--text3);}
+.bb-value{font-size:13px;font-weight:700;font-family:var(--mono);}
+.bb-note{font-size:8px;color:var(--text3);text-align:right;max-width:110px;}
+
+/* ── INSIGHT ROW ── */
+.insight{
+  border-left:3px solid;border-radius:6px;
+  padding:8px 12px;margin-bottom:6px;
+  background:var(--card);
+}
+.insight-tag{font-size:9px;font-weight:700;font-family:var(--mono);}
+.insight-txt{font-size:9.5px;color:var(--text3);}
+
+/* ── TRADE PLAN ── */
+.trade-row{
+  display:flex;gap:10px;align-items:flex-start;
+  padding:9px 12px;background:var(--card);
+  border-left:3px solid;border-radius:6px;margin-bottom:6px;
+}
+.trade-label{min-width:105px;font-size:9px;color:var(--text3);}
+.trade-val{font-family:var(--mono);font-size:13px;font-weight:700;}
+.trade-note{font-size:8px;color:var(--text3);margin-top:2px;}
+
+/* ── SCENARIO ── */
+.scenario-card{
+  background:var(--card);border:1px solid;border-radius:10px;
+  padding:12px 14px;margin-bottom:8px;
+}
+.sc-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;}
+.sc-name{font-size:14px;font-weight:700;font-family:var(--mono);}
+.sc-target{font-size:16px;font-weight:800;font-family:var(--mono);}
+.sc-basis{font-size:9px;color:var(--text3);margin-bottom:8px;line-height:1.5;}
+.sc-prob-wrap{display:flex;align-items:center;gap:8px;}
+.sc-bar{flex:1;background:var(--border);border-radius:3px;height:5px;}
+.sc-bar-fill{height:100%;border-radius:3px;}
+.sc-prob{font-size:10px;font-weight:700;font-family:var(--mono);min-width:28px;}
+.sc-updown{font-size:10px;font-weight:700;font-family:var(--mono);margin-top:4px;}
+
+/* ── CHECKLIST ── */
+.chk-item{display:flex;gap:10px;align-items:flex-start;margin-bottom:8px;}
+.chk-box{
+  width:16px;height:16px;border-radius:3px;min-width:16px;
+  background:var(--border);border:1px solid var(--border2);
+  display:flex;align-items:center;justify-content:center;
+  font-size:8px;margin-top:1px;
+}
+.chk-text{font-size:10px;color:var(--text3);line-height:1.6;}
+
+/* ── VERDICT ── */
+.verdict{
+  background:linear-gradient(135deg,#080f1c,#0a1525);
+  border:1px solid rgba(0,212,255,.2);border-radius:12px;padding:16px;
+}
+.verdict-title{
+  font-family:var(--mono);font-size:18px;font-weight:700;
+  color:var(--orange);margin-bottom:8px;letter-spacing:1px;
+}
+.verdict-body{font-size:10px;color:var(--text);line-height:1.8;margin-bottom:10px;}
+.verdict-action{
+  background:rgba(0,230,118,.06);border:1px solid rgba(0,230,118,.2);
+  border-left:3px solid var(--green);border-radius:8px;padding:10px 12px;
+}
+.verdict-action-title{font-size:10px;font-weight:700;color:var(--gold);margin-bottom:4px;}
+.verdict-action-body{font-size:10px;color:var(--text);line-height:1.7;}
+
+/* ── RISK ITEM ── */
+.risk-item{background:var(--card);border-left:3px solid;border-radius:8px;padding:10px 12px;margin-bottom:8px;}
+.risk-title{font-size:11px;font-weight:700;margin-bottom:3px;}
+.risk-desc{font-size:9.5px;color:var(--text3);line-height:1.6;}
+
+/* ── QUOTE ── */
+.quote{
+  background:rgba(0,212,255,.04);border:1px solid rgba(0,212,255,.12);
+  border-left:3px solid var(--accent);border-radius:10px;
+  padding:14px 16px;margin:12px 0;
+}
+.quote-text{font-size:12px;color:#7ecfef;font-style:italic;line-height:1.7;}
+.quote-author{font-size:9px;color:var(--text3);margin-top:6px;font-family:var(--mono);}
+
+/* ── KPI STRIP ── */
+.kpi-strip{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:12px;}
+.kpi-cell{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:9px 8px;text-align:center;}
+.kpi-v{font-family:var(--mono);font-size:12px;font-weight:700;}
+.kpi-l{font-size:7px;color:var(--text3);margin-top:3px;line-height:1.3;}
+
+/* ── FOOTER ── */
+.footer{text-align:center;font-size:8px;color:var(--text3);padding:20px 0 10px;line-height:2;font-family:var(--mono);}
+
+/* ── RESPONSIVE ── */
+@media(max-width:400px){
+  .sum-grid{grid-template-columns:repeat(2,1fr);}
+  .kpi-strip{grid-template-columns:repeat(2,1fr);}
+}
+
+/* Pulse animation for LIVE badge */
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.5;}}
+.live-badge{animation:pulse 1.4s ease-in-out infinite;}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-top">
+    <div>
+      <div class="ticker-block">
+        <span class="ticker-name">HRUM</span>
+        <span class="ticker-price">Rp 995</span>
+        <span class="ticker-chg">&#9660; 1.49%</span>
+      </div>
+      <div class="ticker-sub">PT HARUM ENERGY TBK &nbsp;|&nbsp; IDX &nbsp;|&nbsp; BACKTEST METODE KANG YAYAN</div>
+    </div>
+    <div class="header-pills">
+      <div class="pill"><div class="pill-l">MKT CAP</div><div class="pill-v">Rp 13.5T</div></div>
+      <div class="pill"><div class="pill-l">52W RANGE</div><div class="pill-v">760–1305</div></div>
+      <div class="pill"><div class="pill-l">SKOR</div><div class="pill-v" style="color:var(--orange)">15/24</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- TAB NAV -->
+<div class="tab-nav">
+  <button class="tab-btn active" onclick="switchTab('backtest',this)">BACKTEST</button>
+  <button class="tab-btn" onclick="switchTab('scorecard',this)">SCORECARD</button>
+  <button class="tab-btn" onclick="switchTab('hpal',this)">HPAL/NIKEL</button>
+  <button class="tab-btn" onclick="switchTab('buyback',this)">BUYBACK</button>
+  <button class="tab-btn" onclick="switchTab('tradeplan',this)">TRADE PLAN</button>
+</div>
+
+<div class="content">
+
+<!-- ══════════ TAB 1: BACKTEST ══════════ -->
+<div class="tab-panel active" id="tab-backtest">
+
+  <!-- Wyckoff Tracker -->
+  <div style="margin-bottom:4px">
+    <div class="divider"><div class="div-line"></div><div class="div-text">POSISI WYCKOFF</div><div class="div-line"></div></div>
+    <div class="card card-glow">
+      <div class="phase-track">
+        <div class="phase-node">
+          <div class="phase-circle" style="border-color:var(--red);color:var(--red)">A</div>
+          <div class="phase-lbl">Distribusi</div>
+        </div>
+        <div class="phase-arrow">&#9654;</div>
+        <div class="phase-node">
+          <div class="phase-circle active" style="background:var(--orange);border-color:var(--orange)">B</div>
+          <div class="phase-lbl" style="color:var(--gold)">Akumulasi</div>
+        </div>
+        <div class="phase-arrow">&#9654;</div>
+        <div class="phase-node">
+          <div class="phase-circle" style="border-color:var(--gold);color:var(--gold)">C</div>
+          <div class="phase-lbl">Spring</div>
+        </div>
+        <div class="phase-arrow">&#9654;</div>
+        <div class="phase-node">
+          <div class="phase-circle" style="border-color:var(--green);color:var(--green)">D</div>
+          <div class="phase-lbl">Markup</div>
+        </div>
+        <div class="phase-arrow">&#9654;</div>
+        <div class="phase-node">
+          <div class="phase-circle" style="border-color:var(--purple);color:var(--purple)">E</div>
+          <div class="phase-lbl">Breakout</div>
+        </div>
+      </div>
+      <div class="wyckoff-note">
+        <div class="wyck-title">&#9650; Posisi: Phase B menuju C</div>
+        <div class="wyck-desc">Distribusi dari Rp 2.400 sudah selesai. Harga sedang proses akumulasi diam-diam. Tunggu konfirmasi <strong style="color:var(--green)">Spring</strong> di area 950–975 sebelum aman entry.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Price Chart -->
+  <div class="divider"><div class="div-line"></div><div class="div-text">HARGA + NET PROFIT (USD JUTA)</div><div class="div-line"></div></div>
+  <div class="chart-wrap" style="padding:12px 8px 8px;position:relative;">
+    <canvas id="priceChart" style="width:100%;height:240px;display:block;"></canvas>
+  </div>
+  <!-- Legend -->
+  <div class="chart-legend" style="margin-top:6px;">
+    <div class="legend-item"><div class="legend-dot" style="background:#ef4444"></div>A: Distribusi</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#f97316"></div>B: Markdown</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#eab308"></div>C: Akumulasi</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#22c55e"></div>D: Markup</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#8b5cf6"></div>Proyeksi</div>
+    <div class="legend-item" style="gap:3px;"><div style="width:18px;height:2px;background:#f59e0b;margin-top:1px;border-radius:1px;opacity:.8;"></div>Now 995</div>
+  </div>
+  <!-- Signal row -->
+  <div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:7px;">
+    <span style="font-size:8px;color:var(--text3);font-family:var(--mono);align-self:center;">SIGNALS:</span>
+    <span style="font-size:8px;background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.3);color:#22c55e;border-radius:3px;padding:2px 7px;font-family:var(--mono);">BUY 2Q24 @920</span>
+    <span style="font-size:8px;background:rgba(0,212,255,.12);border:1px solid rgba(0,212,255,.3);color:var(--accent);border-radius:3px;padding:2px 7px;font-family:var(--mono);">ADD 3Q24 @960</span>
+    <span style="font-size:8px;background:rgba(255,59,92,.12);border:1px solid rgba(255,59,92,.3);color:var(--red);border-radius:3px;padding:2px 7px;font-family:var(--mono);">EXIT 4Q25 @1100</span>
+    <span style="font-size:8px;background:rgba(255,138,0,.12);border:1px solid rgba(255,138,0,.3);color:var(--orange);border-radius:3px;padding:2px 7px;font-family:var(--mono);">WATCH 1Q26</span>
+  </div>
+
+  <!-- Key Metrics 1Q26 (validated) -->
+  <div class="divider"><div class="div-line"></div><div class="div-text">LK 1Q26 — DATA TERVALIDASI</div><div class="div-line"></div></div>
+  <div class="stats-grid">
+    <div class="stat-cell" style="border-left-color:var(--green)">
+      <div class="stat-label">TOTAL REVENUE</div>
+      <div class="stat-value" style="color:var(--green)">$345.9 Jt</div>
+      <div class="stat-sub" style="color:var(--green2)">+15.7% YoY</div>
+    </div>
+    <div class="stat-cell" style="border-left-color:var(--accent)">
+      <div class="stat-label">GROSS PROFIT</div>
+      <div class="stat-value" style="color:var(--accent)">$64.6 Jt</div>
+      <div class="stat-sub">+8.4% YoY</div>
+    </div>
+    <div class="stat-cell" style="border-left-color:var(--green)">
+      <div class="stat-label">NET PROFIT</div>
+      <div class="stat-value" style="color:var(--green)">$27.1 Jt</div>
+      <div class="stat-sub" style="color:var(--green2)">+272% YoY &#128640;</div>
+    </div>
+    <div class="stat-cell" style="border-left-color:var(--red)">
+      <div class="stat-label">FINANCE COST</div>
+      <div class="stat-value" style="color:var(--red)">$20.4 Jt</div>
+      <div class="stat-sub" style="color:var(--red)">+82% YoY &#9888;</div>
+    </div>
+    <div class="stat-cell" style="border-left-color:var(--green)">
+      <div class="stat-label">KAS &amp; SETARA</div>
+      <div class="stat-value" style="color:var(--green)">$154.8 Jt</div>
+      <div class="stat-sub">Cashflow solid</div>
+    </div>
+    <div class="stat-cell" style="border-left-color:var(--orange)">
+      <div class="stat-label">UTANG BANK</div>
+      <div class="stat-value" style="color:var(--orange)">$617 Jt</div>
+      <div class="stat-sub">Current+LT</div>
+    </div>
+    <div class="stat-cell" style="border-left-color:var(--accent)">
+      <div class="stat-label">TOTAL ASET</div>
+      <div class="stat-value" style="color:var(--accent)">$3.69 M</div>
+      <div class="stat-sub">Naik stabil</div>
+    </div>
+    <div class="stat-cell" style="border-left-color:var(--green)">
+      <div class="stat-label">TOTAL EKUITAS</div>
+      <div class="stat-value" style="color:var(--green)">$1.85 M</div>
+      <div class="stat-sub">Sehat</div>
+    </div>
+  </div>
+
+  <!-- Signal History -->
+  <div class="divider"><div class="div-line"></div><div class="div-text">BACKTEST SIGNAL HISTORY</div><div class="div-line"></div></div>
+
+  <!-- Summary -->
+  <div class="sum-grid">
+    <div class="sum-cell"><div class="sum-num" style="color:var(--text)">7</div><div class="sum-lbl">TOTAL SIGNAL</div></div>
+    <div class="sum-cell"><div class="sum-num" style="color:var(--green)">6</div><div class="sum-lbl">AKURAT</div></div>
+    <div class="sum-cell"><div class="sum-num" style="color:var(--red)">1</div><div class="sum-lbl">MISS</div></div>
+    <div class="sum-cell"><div class="sum-num" style="color:var(--gold)">86%</div><div class="sum-lbl">WIN RATE</div></div>
+  </div>
+
+  <!-- Signal Items -->
+  <div class="signal-item" onclick="toggleSignal(this)">
+    <div class="signal-row">
+      <div class="signal-left">
+        <span class="sig-badge" style="color:var(--orange);border-color:var(--orange);background:rgba(255,138,0,.1)">WATCH</span>
+        <span class="sig-period">1Q24</span>
+        <span class="sig-price">Rp 980</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span class="sig-result" style="color:var(--green)">+2%</span>
+        <span class="chevron">&#9660;</span>
+      </div>
+    </div>
+    <div class="sig-detail">Buyback program pertama diumumkan. Manajemen beli saham sendiri = sinyal undervalued. Smart money mulai test market. Belum cukup konfirmasi untuk entry penuh.</div>
+  </div>
+
+  <div class="signal-item" onclick="toggleSignal(this)">
+    <div class="signal-row">
+      <div class="signal-left">
+        <span class="sig-badge" style="color:var(--green);border-color:var(--green);background:rgba(0,230,118,.1)">BUY</span>
+        <span class="sig-period">2Q24</span>
+        <span class="sig-price">Rp 920</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span class="sig-result" style="color:var(--green)">+8%</span>
+        <span class="chevron">&#9660;</span>
+      </div>
+    </div>
+    <div class="sig-detail">Phase C Spring terjadi. Harga menyentuh low 760 lalu bounce. Broker XL mulai masuk konsisten. Titik entry ideal — beli di area yang bandar beli.</div>
+  </div>
+
+  <div class="signal-item" onclick="toggleSignal(this)">
+    <div class="signal-row">
+      <div class="signal-left">
+        <span class="sig-badge" style="color:var(--accent);border-color:var(--accent);background:rgba(0,212,255,.1)">ADD</span>
+        <span class="sig-period">3Q24</span>
+        <span class="sig-price">Rp 960</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span class="sig-result" style="color:var(--green)">+9%</span>
+        <span class="chevron">&#9660;</span>
+      </div>
+    </div>
+    <div class="sig-detail">HPAL nickel smelter output mulai naik. Revenue nikel meledak. XL masih beli di koreksi. Tambah posisi — konfirmasi akumulasi berlanjut.</div>
+  </div>
+
+  <div class="signal-item" onclick="toggleSignal(this)">
+    <div class="signal-row">
+      <div class="signal-left">
+        <span class="sig-badge" style="color:var(--gold);border-color:var(--gold);background:rgba(245,166,35,.1)">HOLD</span>
+        <span class="sig-period">4Q24</span>
+        <span class="sig-price">Rp 1.050</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span class="sig-result" style="color:var(--green)">+5%</span>
+        <span class="chevron">&#9660;</span>
+      </div>
+    </div>
+    <div class="sig-detail">Nickel price recovery global. Revenue dan laba naik. XL, YP, RX semua masih akumulasi. Tahan posisi — trend sedang baik.</div>
+  </div>
+
+  <div class="signal-item fail" onclick="toggleSignal(this)">
+    <div class="signal-row">
+      <div class="signal-left">
+        <span class="sig-badge" style="color:var(--gold);border-color:var(--gold);background:rgba(245,166,35,.1)">HOLD</span>
+        <span class="sig-period">1Q25</span>
+        <span class="sig-price">Rp 1.100</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span class="sig-result" style="color:var(--text3)">FLAT</span>
+        <span class="chevron">&#9660;</span>
+      </div>
+    </div>
+    <div class="sig-detail">Revenue naik tapi laba tertekan finance cost membengkak +82%. Warning sign pertama muncul. Harusnya sudah mulai waspada distribusi.</div>
+  </div>
+
+  <div class="signal-item" onclick="toggleSignal(this)">
+    <div class="signal-row">
+      <div class="signal-left">
+        <span class="sig-badge" style="color:var(--red);border-color:var(--red);background:rgba(255,59,92,.1)">EXIT</span>
+        <span class="sig-period">4Q25</span>
+        <span class="sig-price">Rp 1.100</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span class="sig-result" style="color:var(--red)">-9%</span>
+        <span class="chevron">&#9660;</span>
+      </div>
+    </div>
+    <div class="sig-detail">DP+GR distribusi masif. Foreign flow terus minus besar. Harga tidak mampu tembus resistance. Keluar sebelum terlambat — terbukti harga turun ke 995.</div>
+  </div>
+
+  <div class="signal-item" onclick="toggleSignal(this)">
+    <div class="signal-row">
+      <div class="signal-left">
+        <span class="sig-badge live-badge" style="color:var(--orange);border-color:var(--orange);background:rgba(255,138,0,.1)">WATCH</span>
+        <span class="sig-period">1Q26</span>
+        <span class="sig-price">Rp 995</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span class="sig-result live-badge" style="color:var(--gold)">LIVE</span>
+        <span class="chevron">&#9660;</span>
+      </div>
+    </div>
+    <div class="sig-detail">Laba +272% YoY namun harga masih turun. XL konsisten beli di semua timeframe. Potensi awal akumulasi baru. Pantau broksum harian sebelum masuk.</div>
+  </div>
+
+</div><!-- end backtest tab -->
+
+
+<!-- ══════════ TAB 2: SCORECARD ══════════ -->
+<div class="tab-panel" id="tab-scorecard">
+
+  <div class="score-hero">
+    <div class="score-big">15<span class="score-denom">/24</span></div>
+    <div class="score-pct">63% — Belum Capai Threshold</div>
+    <div class="score-status">&#9888; WATCH ONLY — BELUM ENTRY</div>
+    <div class="score-bar-bg"><div class="score-bar-fill" style="width:63%"></div></div>
+    <div class="score-threshold">THRESHOLD ENTRY: 18/24 (75%)</div>
+  </div>
+
+  <div class="divider"><div class="div-line"></div><div class="div-text">DETAIL 6 DIMENSI</div><div class="div-line"></div></div>
+
+  <div class="sbar">
+    <div class="sbar-head"><span class="sbar-label">1. Fundamental</span><span class="sbar-val" style="color:var(--green)">4/5</span></div>
+    <div class="sbar-bg"><div class="sbar-fill" style="width:80%;background:var(--green)"></div></div>
+    <div class="sbar-detail">Rev $345.9M (+15.7%), Laba $27.1M (+272% YoY). Kas $154.8M solid. Minus: Utang bank $617M dan finance cost +82% YoY.</div>
+  </div>
+
+  <div class="sbar">
+    <div class="sbar-head"><span class="sbar-label">2. Price-Volume</span><span class="sbar-val" style="color:#3b82f6">2/4</span></div>
+    <div class="sbar-bg"><div class="sbar-fill" style="width:50%;background:#3b82f6"></div></div>
+    <div class="sbar-detail">Harga masih downtrend dari ATH 2.400 ke 995. Volume belum ada spike konfirmasi. Sinyal awal akumulasi mulai terlihat tapi belum confirmed.</div>
+  </div>
+
+  <div class="sbar">
+    <div class="sbar-head"><span class="sbar-label">3. Bandarmology</span><span class="sbar-val" style="color:var(--gold)">3/5</span></div>
+    <div class="sbar-bg"><div class="sbar-fill" style="width:60%;background:var(--gold)"></div></div>
+    <div class="sbar-detail">XL konsisten NET BUY semua timeframe (1D/1W/1M/3M/YTD/1Y). RX beli besar $3.8B. Tapi DP masih distribusi -2.8B. Foreign flow minus besar. Mixed.</div>
+  </div>
+
+  <div class="sbar">
+    <div class="sbar-head"><span class="sbar-label">4. Trendline/SR</span><span class="sbar-val" style="color:var(--purple)">2/4</span></div>
+    <div class="sbar-bg"><div class="sbar-fill" style="width:50%;background:var(--purple)"></div></div>
+    <div class="sbar-detail">Area 975–1.000 = support psikologis dan historis kuat. Belum ada reversal dikonfirmasi. Resistance kuat di 1.050–1.100.</div>
+  </div>
+
+  <div class="sbar">
+    <div class="sbar-head"><span class="sbar-label">5. Bid-Offer</span><span class="sbar-val" style="color:var(--cyan)">2/3</span></div>
+    <div class="sbar-bg"><div class="sbar-fill" style="width:67%;background:var(--cyan)"></div></div>
+    <div class="sbar-detail">Broker beli avg 993–997 di area support. Spread normal. RX avg 996, YP avg 993. Arah masih mixed tergantung hari.</div>
+  </div>
+
+  <div class="sbar">
+    <div class="sbar-head"><span class="sbar-label">6. Wyckoff</span><span class="sbar-val" style="color:#ec4899">2/3</span></div>
+    <div class="sbar-bg"><div class="sbar-fill" style="width:67%;background:#ec4899"></div></div>
+    <div class="sbar-detail">Phase B/C. Distribusi sudah selesai dari puncak 1.300. Spring bisa terjadi di area 950–980. Belum Phase C confirmed.</div>
+  </div>
+
+  <div class="divider"><div class="div-line"></div><div class="div-text">RISIKO UTAMA</div><div class="div-line"></div></div>
+
+  <div class="risk-item" style="border-left-color:var(--red)">
+    <div class="risk-title" style="color:var(--red)">&#128184; Finance Cost Meledak +82%</div>
+    <div class="risk-desc">Beban keuangan 1Q26: $20.4 juta naik dari $11.2 juta 1Q25. Utang ke NCI subsidiaries $763.8 juta terus menggerus laba bersih ke pemilik induk.</div>
+  </div>
+  <div class="risk-item" style="border-left-color:var(--orange)">
+    <div class="risk-title" style="color:var(--orange)">&#9889; Nickel Price Volatile</div>
+    <div class="risk-desc">96% revenue dari nickel smelter. Sangat sensitif terhadap harga LME nikel global dan sentimen EV. Jika nikel turun, revenue HRUM ikut jatuh.</div>
+  </div>
+  <div class="risk-item" style="border-left-color:var(--orange)">
+    <div class="risk-title" style="color:var(--orange)">&#127754; Foreign Flow Masih Minus</div>
+    <div class="risk-desc">Foreign net sell terus besar sepanjang 2025–2026. Kumulatif minus lebih dari Rp 851 Miliar. Sebelum asing beli, harga sulit sustained rally.</div>
+  </div>
+  <div class="risk-item" style="border-left-color:var(--gold)">
+    <div class="risk-title" style="color:var(--gold)">&#128295; Buyback Pause 1Q26</div>
+    <div class="risk-desc">Tidak ada pembelian saham tresuri baru di 1Q26 (vs 1,068,188 lembar di 1Q25). Kas lebih digunakan untuk bayar bunga utang yang meningkat.</div>
+  </div>
+
+</div><!-- end scorecard tab -->
+
+
+<!-- ══════════ TAB 3: HPAL/NIKEL ══════════ -->
+<div class="tab-panel" id="tab-hpal">
+
+  <div class="divider"><div class="div-line"></div><div class="div-text">HPAL — 96% REVENUE HRUM</div><div class="div-line"></div></div>
+
+  <div class="card card-glow" style="margin-bottom:12px">
+    <div style="font-size:9px;color:var(--purple);font-family:var(--mono);letter-spacing:2px;margin-bottom:8px">TRANSFORMASI BISNIS HRUM</div>
+    <div style="font-size:10px;color:var(--text);line-height:1.9">
+      HRUM bukan lagi perusahaan batu bara. Dengan investasi masif di <strong style="color:var(--accent)">3 nickel smelter</strong> di Weda Bay Industrial Park, Halmahera Tengah, segmen nikel sudah menyumbang <strong style="color:var(--gold)">96% dari total revenue 1Q26</strong>. Batu bara yang dulu jadi raja kini hanya <strong style="color:var(--red)">$6.2 juta</strong> dari total $345.9 juta.
+    </div>
+  </div>
+
+  <!-- 3 Smelter -->
+  <div class="smelter-card" style="border-left-color:var(--accent)">
+    <div class="smelter-l">
+      <div class="smelter-code" style="color:var(--accent)">BSE</div>
+      <div class="smelter-name">Blue Sparking Energy</div>
+      <div class="smelter-own">25.89% kepemilikan via THN+NICAP</div>
+    </div>
+    <div class="smelter-r">
+      <div class="smelter-asset" style="color:var(--accent)">USD 1.953 M</div>
+      <div class="smelter-loc">Weda Bay, Halmahera</div>
+    </div>
+  </div>
+  <div class="smelter-card" style="border-left-color:var(--green)">
+    <div class="smelter-l">
+      <div class="smelter-code" style="color:var(--green)">WMI</div>
+      <div class="smelter-name">Westrong Metal Industry</div>
+      <div class="smelter-own">40.97% kepemilikan HRUM</div>
+    </div>
+    <div class="smelter-r">
+      <div class="smelter-asset" style="color:var(--green)">USD 747 Jt</div>
+      <div class="smelter-loc">Weda Bay, Halmahera</div>
+    </div>
+  </div>
+  <div class="smelter-card" style="border-left-color:var(--gold)">
+    <div class="smelter-l">
+      <div class="smelter-code" style="color:var(--gold)">IMI</div>
+      <div class="smelter-name">Infei Metal Industry</div>
+      <div class="smelter-own">50.77% kepemilikan HRUM</div>
+    </div>
+    <div class="smelter-r">
+      <div class="smelter-asset" style="color:var(--gold)">USD 198 Jt</div>
+      <div class="smelter-loc">Weda Bay, Halmahera</div>
+    </div>
+  </div>
+
+  <!-- KPI Strip -->
+  <div class="divider"><div class="div-line"></div><div class="div-text">KPI NIKEL 1Q26</div><div class="div-line"></div></div>
+  <div class="kpi-strip">
+    <div class="kpi-cell"><div class="kpi-v" style="color:var(--purple)">431K</div><div class="kpi-l">Ton Ore<br/>Diproduksi</div></div>
+    <div class="kpi-cell"><div class="kpi-v" style="color:var(--green)">$334M</div><div class="kpi-l">Revenue<br/>Nikel 1Q26</div></div>
+    <div class="kpi-cell"><div class="kpi-v" style="color:var(--gold)">96%</div><div class="kpi-l">% dari<br/>Total Rev</div></div>
+    <div class="kpi-cell"><div class="kpi-v" style="color:var(--green)">$49.5M</div><div class="kpi-l">Segment<br/>Profit</div></div>
+  </div>
+
+  <!-- Revenue Comparison -->
+  <div class="divider"><div class="div-line"></div><div class="div-text">PERUBAHAN REVENUE 1Q25 ke 1Q26</div><div class="div-line"></div></div>
+  <div class="card">
+    <div class="seg-bar-row">
+      <div class="seg-bar-head"><span class="seg-label">Nickel Smelter</span><span class="seg-chg" style="color:var(--green)">+92% &#128640;</span></div>
+      <div class="seg-bar-wrap">
+        <div class="seg-old">1Q25: $174M</div>
+        <div class="seg-track"><div class="seg-fill" style="width:100%;background:var(--green)"></div></div>
+        <div class="seg-new" style="color:var(--green)">1Q26: $334M</div>
+      </div>
+    </div>
+    <div class="seg-bar-row">
+      <div class="seg-bar-head"><span class="seg-label">Pertambangan (Coal)</span><span class="seg-chg" style="color:var(--red)">-95% &#9888;</span></div>
+      <div class="seg-bar-wrap">
+        <div class="seg-old">1Q25: $123M</div>
+        <div class="seg-track"><div class="seg-fill" style="width:2%;background:var(--red)"></div></div>
+        <div class="seg-new" style="color:var(--red)">1Q26: $6.2M</div>
+      </div>
+    </div>
+    <div class="seg-bar-row">
+      <div class="seg-bar-head"><span class="seg-label">Sewa &amp; Jasa</span><span class="seg-chg" style="color:var(--gold)">+160%</span></div>
+      <div class="seg-bar-wrap">
+        <div class="seg-old">1Q25: $2.1M</div>
+        <div class="seg-track"><div class="seg-fill" style="width:1.6%;background:var(--gold)"></div></div>
+        <div class="seg-new" style="color:var(--gold)">1Q26: $5.5M</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Product Breakdown (validated) -->
+  <div class="divider"><div class="div-line"></div><div class="div-text">RINCIAN PENJUALAN 1Q26 (LK CATATAN 21)</div><div class="div-line"></div></div>
+  <div class="card">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <div class="kpi-cell"><div class="kpi-v" style="color:var(--accent);font-size:11px">$103.4M</div><div class="kpi-l">Nickel Matte<br/>(Ekspor)</div></div>
+      <div class="kpi-cell"><div class="kpi-v" style="color:var(--purple);font-size:11px">$80.0M</div><div class="kpi-l">MHP Nikel+Kobalt<br/>(Lokal)</div></div>
+      <div class="kpi-cell"><div class="kpi-v" style="color:var(--green);font-size:11px">$77.3M</div><div class="kpi-l">Nickel Matte<br/>(Lokal)</div></div>
+      <div class="kpi-cell"><div class="kpi-v" style="color:var(--cyan);font-size:11px">$42.4M</div><div class="kpi-l">Feronikel<br/>(Ekspor)</div></div>
+      <div class="kpi-cell"><div class="kpi-v" style="color:var(--cyan);font-size:11px">$31.1M</div><div class="kpi-l">Feronikel<br/>(Lokal)</div></div>
+      <div class="kpi-cell"><div class="kpi-v" style="color:var(--orange);font-size:11px">$6.2M</div><div class="kpi-l">Batubara<br/>(Total)</div></div>
+    </div>
+    <div style="font-size:8px;color:var(--text3);margin-top:8px;padding-top:8px;border-top:1px solid var(--border)">
+      Pelanggan >10% revenue: PT Eternal Nickel Industry ($145.4M) dan Hong Kong Rui Pu Co. ($138.3M)
+    </div>
+  </div>
+
+  <!-- Risk / Upside -->
+  <div class="divider"><div class="div-line"></div><div class="div-text">RISK vs UPSIDE NIKEL</div><div class="div-line"></div></div>
+  <div class="insight" style="border-left-color:var(--green)"><span class="insight-tag" style="color:var(--green)">UPSIDE: </span><span class="insight-txt">EV battery demand global naik &#8594; nickel price rally &#8594; revenue meledak</span></div>
+  <div class="insight" style="border-left-color:var(--green)"><span class="insight-tag" style="color:var(--green)">UPSIDE: </span><span class="insight-txt">Kapasitas smelter meningkat — output 1Q26 sudah 431K ton ore, terus naik</span></div>
+  <div class="insight" style="border-left-color:var(--red)"><span class="insight-tag" style="color:var(--red)">RISIKO: </span><span class="insight-txt">Nickel LME price sangat volatile — 96% revenue tergantung satu komoditas</span></div>
+  <div class="insight" style="border-left-color:var(--red)"><span class="insight-tag" style="color:var(--red)">RISIKO: </span><span class="insight-txt">Finance cost +82% YoY — utang NCI $763.8M terus gerus laba ke pemilik induk</span></div>
+
+</div><!-- end hpal tab -->
+
+
+<!-- ══════════ TAB 4: BUYBACK ══════════ -->
+<div class="tab-panel" id="tab-buyback">
+
+  <div class="divider"><div class="div-line"></div><div class="div-text">PROGRAM BUYBACK — DATA LK TERVALIDASI</div><div class="div-line"></div></div>
+
+  <div class="card card-glow" style="margin-bottom:12px;border-left:3px solid var(--purple)">
+    <div style="font-size:9px;color:var(--purple);font-family:var(--mono);letter-spacing:2px;margin-bottom:8px">BUYBACK = SINYAL SMART MONEY</div>
+    <div style="font-size:10px;color:var(--text);line-height:1.9">
+      Per 31 Desember 2025, HRUM memiliki <strong style="color:var(--purple)">369.543.600 lembar saham tresuri</strong> dengan biaya perolehan <strong style="color:var(--gold)">USD 15,382,793 (~Rp 256 Miliar)</strong>. Sepanjang 2025, dibeli tambahan <strong style="color:var(--green)">101.649.300 lembar</strong> seharga USD 5,273,583. Di 1Q26 <strong style="color:var(--red)">tidak ada buyback baru</strong>.
+    </div>
+  </div>
+
+  <div class="bb-item" style="border-left-color:var(--purple)">
+    <div><div class="bb-label">TOTAL SAHAM TRESURI</div><div class="bb-value" style="color:var(--purple)">369,543,600 lembar</div></div>
+    <div class="bb-note">Per 31 Des 2025 (tidak berubah di 1Q26)</div>
+  </div>
+  <div class="bb-item" style="border-left-color:var(--gold)">
+    <div><div class="bb-label">NILAI BUYBACK TOTAL</div><div class="bb-value" style="color:var(--gold)">USD 15,382,793</div></div>
+    <div class="bb-note">~Rp 256 Miliar harga perolehan</div>
+  </div>
+  <div class="bb-item" style="border-left-color:var(--green)">
+    <div><div class="bb-label">BUYBACK SEPANJANG 2025</div><div class="bb-value" style="color:var(--green)">101,649,300 lembar</div></div>
+    <div class="bb-note">Biaya USD 5,273,583</div>
+  </div>
+  <div class="bb-item" style="border-left-color:var(--accent)">
+    <div><div class="bb-label">BUYBACK 1Q25</div><div class="bb-value" style="color:var(--accent)">1,068,188 lembar</div></div>
+    <div class="bb-note">Biaya USD 1,068,188</div>
+  </div>
+  <div class="bb-item" style="border-left-color:var(--text3)">
+    <div><div class="bb-label">BUYBACK 1Q26</div><div class="bb-value" style="color:var(--text3)">0 lembar</div></div>
+    <div class="bb-note">Pause total di 1Q26</div>
+  </div>
+  <div class="bb-item" style="border-left-color:var(--purple)">
+    <div><div class="bb-label">% DARI TOTAL SAHAM</div><div class="bb-value" style="color:var(--purple)">2.73%</div></div>
+    <div class="bb-note">369.5M dari 13,518,100,000 saham</div>
+  </div>
+
+  <!-- Timeline -->
+  <div class="divider"><div class="div-line"></div><div class="div-text">TIMELINE BUYBACK</div><div class="div-line"></div></div>
+  <div class="card">
+    <div style="display:flex;flex-direction:column;gap:0">
+      <div style="display:flex;gap:12px;padding-bottom:14px">
+        <div style="display:flex;flex-direction:column;align-items:center;min-width:12px">
+          <div style="width:10px;height:10px;border-radius:50%;background:var(--accent);flex-shrink:0"></div>
+          <div style="width:1px;flex:1;background:var(--border2)"></div>
+        </div>
+        <div><div style="font-size:8px;color:var(--text3);font-family:var(--mono)">2023–2024</div><div style="font-size:11px;font-weight:600;color:var(--accent)">Buyback Phase 1</div><div style="font-size:9px;color:var(--text3)">Pembelian awal di area 900–1.100. Manajemen anggap harga undervalued.</div></div>
+      </div>
+      <div style="display:flex;gap:12px;padding-bottom:14px">
+        <div style="display:flex;flex-direction:column;align-items:center;min-width:12px">
+          <div style="width:10px;height:10px;border-radius:50%;background:var(--purple);flex-shrink:0"></div>
+          <div style="width:1px;flex:1;background:var(--border2)"></div>
+        </div>
+        <div><div style="font-size:8px;color:var(--text3);font-family:var(--mono)">2025</div><div style="font-size:11px;font-weight:600;color:var(--purple)">Buyback Phase 2 — Agresif</div><div style="font-size:9px;color:var(--text3)">101.6 juta lembar dibeli total USD 5.27 juta. Akumulatif 369.5M lembar tresuri.</div></div>
+      </div>
+      <div style="display:flex;gap:12px;padding-bottom:14px">
+        <div style="display:flex;flex-direction:column;align-items:center;min-width:12px">
+          <div style="width:10px;height:10px;border-radius:50%;background:var(--red);flex-shrink:0"></div>
+          <div style="width:1px;flex:1;background:var(--border2)"></div>
+        </div>
+        <div><div style="font-size:8px;color:var(--text3);font-family:var(--mono)">1Q26</div><div style="font-size:11px;font-weight:600;color:var(--red)">Buyback Berhenti</div><div style="font-size:9px;color:var(--text3)">Tidak ada buyback baru. Finance cost +82% — kas diprioritaskan bayar bunga.</div></div>
+      </div>
+      <div style="display:flex;gap:12px">
+        <div style="display:flex;flex-direction:column;align-items:center;min-width:12px">
+          <div style="width:10px;height:10px;border-radius:50%;background:var(--green);flex-shrink:0"></div>
+        </div>
+        <div><div style="font-size:8px;color:var(--text3);font-family:var(--mono)">KE DEPAN</div><div style="font-size:11px;font-weight:600;color:var(--green)">Potensi Resume Buyback</div><div style="font-size:9px;color:var(--text3)">Jika buyback resume di harga 950–1.000 = sinyal kuat konfirmasi entry.</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Analysis -->
+  <div class="divider"><div class="div-line"></div><div class="div-text">ANALISA BUYBACK</div><div class="div-line"></div></div>
+  <div class="insight" style="border-left-color:var(--green)"><span class="insight-tag" style="color:var(--green)">&#10003; POSITIF: </span><span class="insight-txt">Buyback aktif 2024–2025 di area 900–1.100 = manajemen konfirmasi harga murah.</span></div>
+  <div class="insight" style="border-left-color:var(--green)"><span class="insight-tag" style="color:var(--green)">&#10003; POSITIF: </span><span class="insight-txt">369.5M saham tresuri (2.73% total). EPS naik jika saham dimatikan.</span></div>
+  <div class="insight" style="border-left-color:var(--orange)"><span class="insight-tag" style="color:var(--orange)">&#9888; WASPADA: </span><span class="insight-txt">1Q26 nol buyback. Finance cost naik +82% — likuiditas dikonsumsi utang.</span></div>
+  <div class="insight" style="border-left-color:var(--purple)"><span class="insight-tag" style="color:var(--purple)">&#128161; INSIGHT: </span><span class="insight-txt">Jika buyback resume = sinyal kuat manajemen siap dorong harga naik.</span></div>
+
+</div><!-- end buyback tab -->
+
+
+<!-- ══════════ TAB 5: TRADE PLAN ══════════ -->
+<div class="tab-panel" id="tab-tradeplan">
+
+  <!-- Broker Flow Summary -->
+  <div class="divider"><div class="div-line"></div><div class="div-text">BROKER FLOW — 30 APR 2026</div><div class="div-line"></div></div>
+  <div class="card" style="margin-bottom:12px">
+    <div class="broker-row">
+      <span class="broker-name" style="color:var(--green)">XL</span>
+      <span class="broker-side" style="color:var(--green);background:rgba(0,230,118,.12);border:1px solid rgba(0,230,118,.3)">BUY</span>
+      <div class="broker-bar-wrap"><div class="broker-bar-center"></div><div class="broker-bar-fill" style="left:50%;width:47%;background:rgba(0,230,118,.5)"></div></div>
+      <span class="broker-net" style="color:var(--green)">+4.2B</span>
+      <span class="broker-note">Konsisten semua TF &#128293;</span>
+    </div>
+    <div class="broker-row">
+      <span class="broker-name" style="color:var(--green)">RX</span>
+      <span class="broker-side" style="color:var(--green);background:rgba(0,230,118,.12);border:1px solid rgba(0,230,118,.3)">BUY</span>
+      <div class="broker-bar-wrap"><div class="broker-bar-center"></div><div class="broker-bar-fill" style="left:50%;width:42%;background:rgba(0,230,118,.5)"></div></div>
+      <span class="broker-net" style="color:var(--green)">+3.8B</span>
+      <span class="broker-note">Beli besar, avg 996</span>
+    </div>
+    <div class="broker-row">
+      <span class="broker-name" style="color:var(--green)">YP</span>
+      <span class="broker-side" style="color:var(--green);background:rgba(0,230,118,.12);border:1px solid rgba(0,230,118,.3)">BUY</span>
+      <div class="broker-bar-wrap"><div class="broker-bar-center"></div><div class="broker-bar-fill" style="left:50%;width:18%;background:rgba(0,230,118,.5)"></div></div>
+      <span class="broker-net" style="color:var(--green)">+1.6B</span>
+      <span class="broker-note">Konsisten, avg 993</span>
+    </div>
+    <div class="broker-row">
+      <span class="broker-name" style="color:#4ade80">CC</span>
+      <span class="broker-side" style="color:#4ade80;background:rgba(74,222,128,.1);border:1px solid rgba(74,222,128,.3)">BUY</span>
+      <div class="broker-bar-wrap"><div class="broker-bar-center"></div><div class="broker-bar-fill" style="left:50%;width:9%;background:rgba(74,222,128,.4)"></div></div>
+      <span class="broker-net" style="color:#4ade80">+0.8B</span>
+      <span class="broker-note">Beli moderat</span>
+    </div>
+    <div class="broker-row">
+      <span class="broker-name" style="color:#4ade80">AK</span>
+      <span class="broker-side" style="color:#4ade80;background:rgba(74,222,128,.1);border:1px solid rgba(74,222,128,.3)">BUY</span>
+      <div class="broker-bar-wrap"><div class="broker-bar-center"></div><div class="broker-bar-fill" style="left:50%;width:7%;background:rgba(74,222,128,.4)"></div></div>
+      <span class="broker-net" style="color:#4ade80">+0.6B</span>
+      <span class="broker-note">Accumulate perlahan</span>
+    </div>
+    <div class="broker-row">
+      <span class="broker-name" style="color:var(--orange)">GR</span>
+      <span class="broker-side" style="color:var(--orange);background:rgba(255,138,0,.1);border:1px solid rgba(255,138,0,.3)">SELL</span>
+      <div class="broker-bar-wrap"><div class="broker-bar-center"></div><div class="broker-bar-fill" style="right:50%;width:13%;background:rgba(255,138,0,.5)"></div></div>
+      <span class="broker-net" style="color:var(--orange)">-1.2B</span>
+      <span class="broker-note">Jual konsisten 1W</span>
+    </div>
+    <div class="broker-row">
+      <span class="broker-name" style="color:var(--red)">DP</span>
+      <span class="broker-side" style="color:var(--red);background:rgba(255,59,92,.1);border:1px solid rgba(255,59,92,.3)">SELL</span>
+      <div class="broker-bar-wrap"><div class="broker-bar-center"></div><div class="broker-bar-fill" style="right:50%;width:31%;background:rgba(255,59,92,.5)"></div></div>
+      <span class="broker-net" style="color:var(--red)">-2.8B</span>
+      <span class="broker-note">Distribusi &#9888; WASPADA</span>
+    </div>
+    <div class="broker-row">
+      <span class="broker-name" style="color:var(--orange)">YU</span>
+      <span class="broker-side" style="color:var(--orange);background:rgba(255,138,0,.1);border:1px solid rgba(255,138,0,.3)">SELL</span>
+      <div class="broker-bar-wrap"><div class="broker-bar-center"></div><div class="broker-bar-fill" style="right:50%;width:10%;background:rgba(255,138,0,.5)"></div></div>
+      <span class="broker-net" style="color:var(--orange)">-0.9B</span>
+      <span class="broker-note">Jual akhir sesi</span>
+    </div>
+  </div>
+
+  <!-- 3 Scenarios -->
+  <div class="divider"><div class="div-line"></div><div class="div-text">3 SKENARIO HARGA</div><div class="div-line"></div></div>
+
+  <div class="scenario-card" style="border-color:rgba(0,230,118,.25)">
+    <div class="sc-head"><span class="sc-name" style="color:var(--green)">&#128640; BULL</span><span class="sc-target" style="color:var(--green)">Rp 1.300</span></div>
+    <div class="sc-basis">HPAL nickel price naik + batu bara stabil + buyback resume aktif</div>
+    <div class="sc-prob-wrap"><div class="sc-bar"><div class="sc-bar-fill" style="width:25%;background:var(--green)"></div></div><span class="sc-prob" style="color:var(--green)">25%</span></div>
+    <div class="sc-updown" style="color:var(--green)">+30.7% dari Rp 995</div>
+  </div>
+
+  <div class="scenario-card" style="border-color:rgba(0,212,255,.25)">
+    <div class="sc-head"><span class="sc-name" style="color:var(--accent)">&#128200; BASE</span><span class="sc-target" style="color:var(--accent)">Rp 1.100</span></div>
+    <div class="sc-basis">Recovery normal, broker XL selesaikan akumulasi, foreign mulai netral</div>
+    <div class="sc-prob-wrap"><div class="sc-bar"><div class="sc-bar-fill" style="width:50%;background:var(--accent)"></div></div><span class="sc-prob" style="color:var(--accent)">50%</span></div>
+    <div class="sc-updown" style="color:var(--accent)">+10.6% dari Rp 995</div>
+  </div>
+
+  <div class="scenario-card" style="border-color:rgba(255,59,92,.25)">
+    <div class="sc-head"><span class="sc-name" style="color:var(--red)">&#128201; BEAR</span><span class="sc-target" style="color:var(--red)">Rp 850</span></div>
+    <div class="sc-basis">Nickel LME turun lagi, distribusi DP berlanjut, foreign terus jual</div>
+    <div class="sc-prob-wrap"><div class="sc-bar"><div class="sc-bar-fill" style="width:25%;background:var(--red)"></div></div><span class="sc-prob" style="color:var(--red)">25%</span></div>
+    <div class="sc-updown" style="color:var(--red)">-14.6% dari Rp 995</div>
+  </div>
+
+  <!-- Trade Plan -->
+  <div class="divider"><div class="div-line"></div><div class="div-text">TRADE PLAN FINAL</div><div class="div-line"></div></div>
+
+  <div class="trade-row" style="border-left-color:var(--gold)">
+    <div class="trade-label">Status Sekarang</div>
+    <div><div class="trade-val" style="color:var(--gold)">WATCH ONLY</div><div class="trade-note">Skor 15/24 (63%) belum threshold 75%</div></div>
+  </div>
+  <div class="trade-row" style="border-left-color:var(--green)">
+    <div class="trade-label">Entry Ideal</div>
+    <div><div class="trade-val" style="color:var(--green)">Rp 950–975</div><div class="trade-note">Tunggu Spring + broksum XL/RX masif</div></div>
+  </div>
+  <div class="trade-row" style="border-left-color:var(--accent)">
+    <div class="trade-label">Entry Partial</div>
+    <div><div class="trade-val" style="color:var(--accent)">Rp 995–1.010</div><div class="trade-note">Max 3–4% portofolio, hanya jika XL+RX konsisten</div></div>
+  </div>
+  <div class="trade-row" style="border-left-color:#3b82f6">
+    <div class="trade-label">Target 1</div>
+    <div><div class="trade-val" style="color:#3b82f6">Rp 1.100</div><div class="trade-note">Partial profit 30% — resistance pertama</div></div>
+  </div>
+  <div class="trade-row" style="border-left-color:var(--purple)">
+    <div class="trade-label">Target 2</div>
+    <div><div class="trade-val" style="color:var(--purple)">Rp 1.250</div><div class="trade-note">Partial profit 40% — area distribusi YTD</div></div>
+  </div>
+  <div class="trade-row" style="border-left-color:var(--purple)">
+    <div class="trade-label">Runner Target</div>
+    <div><div class="trade-val" style="color:var(--purple)">Rp 1.400+</div><div class="trade-note">Jika nickel global rally + buyback resume</div></div>
+  </div>
+  <div class="trade-row" style="border-left-color:var(--red)">
+    <div class="trade-label">Stop Loss</div>
+    <div><div class="trade-val" style="color:var(--red)">Rp 900</div><div class="trade-note">Cut jika break support mayor, review thesis</div></div>
+  </div>
+
+  <!-- Checklist -->
+  <div class="divider"><div class="div-line"></div><div class="div-text">CHECKLIST TRIGGER ENTRY</div><div class="div-line"></div></div>
+  <div class="card" style="margin-bottom:12px">
+    <div class="chk-item"><div class="chk-box" style="border-color:var(--border2)"></div><div class="chk-text">DP flip dari net sell ke net buy minimal 2 hari berturut-turut</div></div>
+    <div class="chk-item"><div class="chk-box" style="border-color:var(--border2)"></div><div class="chk-text">XL + RX + YP semua net buy dalam 1 hari yang sama</div></div>
+    <div class="chk-item"><div class="chk-box" style="border-color:var(--border2)"></div><div class="chk-text">Harga hold di atas Rp 1.000 dengan volume naik signifikan</div></div>
+    <div class="chk-item"><div class="chk-box" style="border-color:var(--border2)"></div><div class="chk-text">Buyback resume — ada pengumuman baru di keterbukaan IDX</div></div>
+    <div class="chk-item"><div class="chk-box" style="border-color:var(--border2)"></div><div class="chk-text">Nickel LME naik lebih dari 5% dalam 1 minggu</div></div>
+    <div class="chk-item"><div class="chk-box" style="border-color:var(--border2)"></div><div class="chk-text">Foreign flow mulai berkurang intensitas net sell-nya</div></div>
+    <div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border);font-size:9px;color:var(--text3)">
+      &#9888; <strong style="color:var(--red)">0/6 trigger terpenuhi</strong> per 30 Apr 2026 — belum entry
+    </div>
+  </div>
+
+  <!-- Verdict -->
+  <div class="divider"><div class="div-line"></div><div class="div-text">VERDICT FINAL</div><div class="div-line"></div></div>
+  <div class="verdict">
+    <div class="verdict-title">WATCH &amp; WAIT</div>
+    <div class="verdict-body">
+      HRUM memiliki fundamental yang sangat membaik — laba +272% YoY, HPAL beroperasi produktif menyumbang 96% revenue, buyback aktif senilai Rp 256 Miliar. Broker XL konsisten accumulate di semua timeframe.<br/><br/>
+      Namun foreign flow masih minus besar, broker DP masih distribusi -2.8B, dan harga belum ada reversal yang dikonfirmasi. Skor 15/24 (63%) belum capai threshold 75%.
+    </div>
+    <div class="verdict-action">
+      <div class="verdict-action-title">&#127919; Langkah Selanjutnya:</div>
+      <div class="verdict-action-body">
+        <strong style="color:var(--orange)">Masukkan ke Watchlist Prioritas.</strong> Pantau broksum harian. Jika <strong style="color:var(--green)">DP flip ke buy + XL/RX masih beli + harga hold 1.000</strong> maka itu sinyal masuk. Jika tidak ada konfirmasi maka <strong style="color:var(--red)">jangan FOMO masuk</strong>. Patience adalah senjata utama trader yang disiplin.
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">
+    ANALISA HRUM &nbsp;|&nbsp; METODE KANG YAYAN<br/>
+    BASIS: LK HRUM 1Q26 (31 MAR 2026) + BROKER FLOW 30 APR 2026<br/>
+    <strong>BERSIFAT EDUKATIF — BUKAN REKOMENDASI BELI/JUAL</strong><br/>
+    SELALU LAKUKAN RISET MANDIRI DAN MANAGE RISK
+  </div>
+
+</div><!-- end tradeplan tab -->
+
+</div><!-- end content -->
+
+<script>
+// ── TAB SWITCHING ──
+function switchTab(id, btn) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+  btn.classList.add('active');
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+// ── SIGNAL TOGGLE ──
+function toggleSignal(el) {
+  el.classList.toggle('open');
+}
+
+// ── CHART.JS DUAL AXIS CHART ──
+(function loadChart() {
+  var script = document.createElement('script');
+  script.src = 'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js';
+  script.onload = function() { buildChart(); };
+  document.head.appendChild(script);
+})();
+
+function buildChart() {
+  var labels = ['1Q22','2Q22','3Q22','4Q22','1Q23','2Q23','3Q23','4Q23',
+                '1Q24','2Q24','3Q24','4Q24','1Q25','2Q25','3Q25','4Q25',
+                '1Q26','2Q26','3Q26','4Q26'];
+
+  var priceData = [2400,1900,1600,1350,1250,1100,1050,1000,
+                   980,920,960,1050,1100,1150,1200,1100,
+                   995,null,null,null];
+
+  var projData  = [null,null,null,null,null,null,null,null,
+                   null,null,null,null,null,null,null,null,
+                   995,1050,1150,1250];
+
+  var profitData= [95,78,62,48,28,18,12,22,
+                   15,18,22,30,7,35,38,42,
+                   27,35,42,48];
+
+  // phase color per point (for dots)
+  var phaseColors = [
+    '#ef4444','#ef4444','#ef4444',          // A: 1Q22-3Q22
+    '#f97316','#f97316','#f97316','#f97316','#f97316', // B: 4Q22-4Q23
+    '#eab308','#eab308','#eab308',           // C: 1Q24-3Q24
+    '#22c55e','#22c55e','#22c55e','#22c55e','#22c55e', // D: 4Q24-4Q25
+    '#f97316',                               // B/C: 1Q26
+    '#8b5cf6','#8b5cf6','#8b5cf6'           // proj
+  ];
+
+  var events = {
+    '1Q22':'ATH Batu Bara','3Q22':'Distribusi mulai',
+    '1Q23':'Harga bara turun','3Q23':'HPAL mulai ops',
+    '1Q24':'Buyback program','2Q24':'Spring / Low',
+    '3Q24':'XL mulai acc','4Q24':'Nickel recovery',
+    '1Q25':'Rev +15% YoY','4Q25':'Distribusi DP/GR',
+    '1Q26':'Laba +272% YoY'
+  };
+
+  var signals = {'2Q24':'BUY','3Q24':'ADD','4Q25':'EXIT','1Q26':'WATCH'};
+  var signalColors = {'BUY':'#22c55e','ADD':'#00d4ff','EXIT':'#ff3b5c','WATCH':'#f97316'};
+
+  var ctx = document.getElementById('priceChart').getContext('2d');
+
+  // gradient for price area
+  var gradient = ctx.createLinearGradient(0, 0, 0, 300);
+  gradient.addColorStop(0,   'rgba(56,189,248,0.25)');
+  gradient.addColorStop(0.6, 'rgba(56,189,248,0.05)');
+  gradient.addColorStop(1,   'rgba(56,189,248,0.00)');
+
+  // profit bar colors
+  var profitColors = profitData.map(function(v, i) {
+    return i >= 17 ? 'rgba(139,92,246,0.35)' : 'rgba(34,197,94,0.35)';
+  });
+  var profitBorders = profitData.map(function(v, i) {
+    return i >= 17 ? '#8b5cf6' : '#22c55e';
+  });
+
+  window.hruChart = new Chart(ctx, {
+    data: {
+      labels: labels,
+      datasets: [
+        // BAR: Net Profit (right axis) — behind everything
+        {
+          type: 'bar',
+          label: 'Net Profit $M',
+          data: profitData,
+          backgroundColor: profitColors,
+          borderColor: profitBorders,
+          borderWidth: 1,
+          borderRadius: 3,
+          yAxisID: 'yRight',
+          order: 3,
+        },
+        // AREA: Harga historis (left axis)
+        {
+          type: 'line',
+          label: 'Harga',
+          data: priceData,
+          borderColor: '#38bdf8',
+          borderWidth: 2.5,
+          backgroundColor: gradient,
+          fill: true,
+          tension: 0.25,
+          pointRadius: function(ctx) {
+            var i = ctx.dataIndex;
+            return events[labels[i]] ? 7 : 5;
+          },
+          pointHoverRadius: 9,
+          pointBackgroundColor: phaseColors,
+          pointBorderColor: '#0d1829',
+          pointBorderWidth: 1.5,
+          yAxisID: 'yLeft',
+          order: 1,
+          spanGaps: false,
+        },
+        // LINE: Proyeksi putus-putus (left axis)
+        {
+          type: 'line',
+          label: 'Proyeksi',
+          data: projData,
+          borderColor: '#8b5cf6',
+          borderWidth: 2,
+          borderDash: [6, 4],
+          backgroundColor: 'transparent',
+          fill: false,
+          tension: 0.3,
+          pointRadius: function(ctx) {
+            var i = ctx.dataIndex;
+            return projData[i] !== null ? 4 : 0;
+          },
+          pointHoverRadius: 6,
+          pointBackgroundColor: '#8b5cf6',
+          pointBorderColor: '#0d1829',
+          pointBorderWidth: 1,
+          yAxisID: 'yLeft',
+          order: 2,
+          spanGaps: false,
+        },
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      animation: { duration: 800, easing: 'easeInOutQuart' },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#0a1628',
+          borderColor: '#1e3a5f',
+          borderWidth: 1,
+          titleColor: '#38bdf8',
+          bodyColor: '#c8d8f0',
+          titleFont: { family: "'Space Mono', monospace", size: 11, weight: 'bold' },
+          bodyFont: { family: "'Space Mono', monospace", size: 10 },
+          padding: 10,
+          cornerRadius: 8,
+          callbacks: {
+            title: function(items) {
+              var lbl = items[0].label;
+              var ev = events[lbl];
+              return lbl + (ev ? '  📌 ' + ev : '');
+            },
+            label: function(item) {
+              if (item.dataset.label === 'Harga') {
+                var v = item.raw;
+                if (v == null) return null;
+                var sig = signals[item.label];
+                var base = '  Harga: Rp ' + v.toLocaleString();
+                return sig ? base + '  ▶ ' + sig : base;
+              }
+              if (item.dataset.label === 'Net Profit $M') {
+                return '  Net Profit: $' + item.raw + 'M';
+              }
+              if (item.dataset.label === 'Proyeksi' && item.raw != null) {
+                return '  Proyeksi: Rp ' + item.raw.toLocaleString() + '  🔮';
+              }
+              return null;
+            },
+            labelColor: function(item) {
+              if (item.dataset.label === 'Harga') {
+                return { borderColor: phaseColors[item.dataIndex], backgroundColor: phaseColors[item.dataIndex] };
+              }
+              if (item.dataset.label === 'Net Profit $M') {
+                return { borderColor: '#22c55e', backgroundColor: '#22c55e' };
+              }
+              return { borderColor: '#8b5cf6', backgroundColor: '#8b5cf6' };
+            }
+          }
+        },
+        // Annotation plugin for NOW line — draw manually via afterDraw
+      },
+      scales: {
+        x: {
+          grid: { color: 'rgba(14,32,64,0.8)', lineWidth: 0.5 },
+          ticks: {
+            color: '#3d5a7a',
+            font: { family: "'Space Mono', monospace", size: 8 },
+            maxRotation: 0,
+            maxTicksLimit: 8,
+          },
+          border: { color: '#0e2040' }
+        },
+        yLeft: {
+          type: 'linear',
+          position: 'left',
+          min: 600,
+          max: 2600,
+          grid: { color: 'rgba(14,32,64,0.7)', lineWidth: 0.5 },
+          ticks: {
+            color: '#3d5a7a',
+            font: { family: "'Space Mono', monospace", size: 8 },
+            maxTicksLimit: 7,
+            callback: function(v) { return v; }
+          },
+          border: { color: '#0e2040' }
+        },
+        yRight: {
+          type: 'linear',
+          position: 'right',
+          min: 0,
+          max: 110,
+          grid: { drawOnChartArea: false },
+          ticks: {
+            color: '#1a6040',
+            font: { family: "'Space Mono', monospace", size: 8 },
+            maxTicksLimit: 6,
+            callback: function(v) { return '$' + v + 'M'; }
+          },
+          border: { color: '#0e2040' }
+        }
+      }
+    },
+    plugins: [{
+      id: 'customDraw',
+      afterDraw: function(chart) {
+        var ctx2 = chart.ctx;
+        var xScale = chart.scales.yLeft;
+        var xAxis  = chart.scales.x;
+
+        // NOW dashed line at 995
+        var y995 = xScale.getPixelForValue(995);
+        ctx2.save();
+        ctx2.beginPath();
+        ctx2.setLineDash([6,4]);
+        ctx2.strokeStyle = 'rgba(245,166,35,0.7)';
+        ctx2.lineWidth = 1.2;
+        ctx2.moveTo(xAxis.left, y995);
+        ctx2.lineTo(xAxis.right, y995);
+        ctx2.stroke();
+        ctx2.setLineDash([]);
+        ctx2.fillStyle = '#f59e0b';
+        ctx2.font = 'bold 8px monospace';
+        ctx2.fillText('NOW 995', xAxis.left + 6, y995 - 4);
+        ctx2.restore();
+
+        // Signal triangles above BUY / ADD / EXIT / WATCH dots
+        var ds = chart.getDatasetMeta(1); // Harga dataset
+        var sigIdxMap = {'2Q24':9,'3Q24':10,'4Q25':15,'1Q26':16};
+        var sigCol2 = {BUY:'#22c55e',ADD:'#00d4ff',EXIT:'#ff3b5c',WATCH:'#f97316'};
+        Object.keys(sigIdxMap).forEach(function(period) {
+          var sig = signals[period];
+          if (!sig) return;
+          var idx = sigIdxMap[period];
+          var el = ds.data[idx];
+          if (!el) return;
+          var px = el.x, py = el.y - 16;
+          var col = sigCol2[sig];
+          ctx2.save();
+          // triangle
+          ctx2.beginPath();
+          ctx2.moveTo(px, py + 7);
+          ctx2.lineTo(px - 4, py);
+          ctx2.lineTo(px + 4, py);
+          ctx2.closePath();
+          ctx2.fillStyle = col;
+          ctx2.fill();
+          // label
+          ctx2.font = 'bold 7px monospace';
+          ctx2.textAlign = 'center';
+          ctx2.fillStyle = col;
+          ctx2.fillText(sig, px, py - 2);
+          ctx2.restore();
+        });
+      }
+    }]
+  });
+}
+</script>
+</body>
+</html>
